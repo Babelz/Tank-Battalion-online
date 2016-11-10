@@ -42,7 +42,7 @@
   <ItemGroup>
     <Compile Include="IniFile.cs" />
     <Compile Include="PacketSerializer.cs" />
-    <Compile Include="Packets\AuthPacket.cs" />
+    <Compile Include="Packets\AuthenticationPacket.cs" />
     <Compile Include="Packets\IPacket.cs" />
     <Compile Include="Packets\PacketType.cs" />
     <Compile Include="Packets\PingPacket.cs" />
