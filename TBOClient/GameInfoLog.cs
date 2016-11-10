@@ -21,7 +21,7 @@ namespace TBOClient
         #region Fields
         private readonly List<InfoLogEntry> entries;
 
-        private readonly SpriteFont font;
+        private SpriteFont font;
         #endregion
 
         public GameInfoLog(Game game) 
@@ -32,16 +32,19 @@ namespace TBOClient
 
         protected override void LoadContent()
         {
-            Game.Content.Load<SpriteFont>("console");
+            font = Game.Content.Load<SpriteFont>("console");
         }
 
         public override void Update(GameTime gameTime)
         {
-            base.Update(gameTime);
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var entry = entries[i];
+                
+            }
         }
         public override void Draw(GameTime gameTime)
         {
-            base.Draw(gameTime);
         }
     }
 }
