@@ -36,7 +36,7 @@ namespace TBOLib
         }
 
         // Packet structure:
-        // [4-bytes count of packets][5-bytes * count of packets (type and size)][packet data]
+        // [4-bytes count of packets][packet types (byte per each)][packet data]
 
         public static byte[] Serialize(IPacket packet)
         {
@@ -45,85 +45,75 @@ namespace TBOLib
 
         public static byte[] Serialize(IPacket[] packets)
         {
-            // 4-byte header that contains the count of the packets.
-            // 5-byte values that contain the type of the packet and the size of the packet after the header.
-            // first packet location = 4-bytes + 4-bytes * count_of_packets.
-            
             var count       = packets.Length;
-            var sizes       = packets.Select(p => p.Size()).ToArray();
             var types       = packets.Select(p => (byte)p.Type).ToArray();
-            
-            var buffer      = new byte[sizeof(int) + (sizeof(int) + 1) * sizes.Length + sizes.Sum()];
+
+            var headerSize  = sizeof(int);
+            var typesSize   = sizeof(byte) * packets.Length;
+            var dataSize    = packets.Sum(p => Marshal.SizeOf(p));
+
+            var buffer      = new byte[headerSize + typesSize + dataSize];
             var bufferIndex = 4;
 
-            foreach (var size in sizes) Debug.Assert(size > 1);
-
-            // Write header and packets information.
+            // Write header and packets information (4-bytes)
             Array.Copy(BitConverter.GetBytes(count), buffer, sizeof(int));
             
-            for (var i = 0; i < sizes.Length; i++)
+            for (var i = 0; i < packets.Length; i++)
             {
                 // Copy type (1-byte)
                 Array.Copy(types, i, buffer, bufferIndex, 1);
                 bufferIndex++;
-
-                // Copy size (4-bytes)
-                Array.Copy(BitConverter.GetBytes(sizes[i]), 0, buffer, bufferIndex, sizeof(int));
-                bufferIndex += 4;
             }
             
             // Write packets.
-            var formatter       = new BinaryFormatter();
-            var packetBuffer    = new byte[sizes.Max()];
+            var packetBuffer    = new byte[packets.Max(p => Marshal.SizeOf(p))];
+            var handle          = Marshal.AllocHGlobal(packetBuffer.Length);
 
-            var ptr             = Marshal.AllocHGlobal(packetBuffer.Length);
-
-            bufferIndex = sizeof(int) + (sizeof(int) + 1) * sizes.Length;
+            // Start writing from the end of header + types region.
+            bufferIndex = headerSize + typesSize;
 
             for (var i = 0; i < packets.Length; i++)
             {
-                var size = sizes[i];
+                var packet      = packets[i];
+                var packetSize  = Marshal.SizeOf(packet);
+                
+                Marshal.StructureToPtr(packet, handle, false);
+                Marshal.Copy(handle, buffer, bufferIndex, packetSize);
 
-                Marshal.StructureToPtr(packets[i], ptr, false);
-                Marshal.Copy(ptr, buffer, bufferIndex, size);
-
-                bufferIndex += size;
+                bufferIndex += packetSize;
             }
 
-            Marshal.FreeHGlobal(ptr);
+            Marshal.FreeHGlobal(handle);
 
             return buffer;
         }
 
         public static IPacket[] Deserialize(byte[] buffer)
         {
+            var headerSize  = sizeof(int);
             var count       = BitConverter.ToInt32(buffer, 0);
             var packetDatas = new PacketData[count];
-            var bufferIndex = 4;
+            var bufferIndex = headerSize;
 
             // Extract packet data.
             for (var i = 0; i < count; i++)
             {
-                var packetData = new PacketData();
+                PacketData packetData;
 
                 packetData.packetType = (PacketType)buffer[bufferIndex];
-                bufferIndex++;
-
-                packetData.size       = BitConverter.ToInt32(buffer, bufferIndex);
-                bufferIndex           += 4;
-                
-                Debug.Assert(packetData.size > 1);
-
                 packetData.type       = types[packetData.packetType];
-                
+                packetData.size       = Marshal.SizeOf(packetData.type);
+
                 packetDatas[i]        = packetData;
+
+                bufferIndex++;
             }
 
             // Create packets.
             var packets     = new IPacket[packetDatas.Length];
             var handle      = Marshal.AllocHGlobal(packetDatas.Max(p => p.size));
 
-            bufferIndex = sizeof(int) + (sizeof(int) + 1) * count; 
+            bufferIndex     = headerSize + count; 
 
             for (var i = 0; i < packets.Length; i++)
             {

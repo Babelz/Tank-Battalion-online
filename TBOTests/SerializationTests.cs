@@ -19,10 +19,10 @@ namespace TBOTests
             var bytes = PacketSerializer.Serialize(pingPacket);
 
             var header      = 4;
-            var packetData  = 5;
-            var packetSize  = pingPacket.Size();
+            var packets     = 1;
+            var packetSize  = Marshal.SizeOf(pingPacket);
 
-            Assert.AreEqual(header + packetData + packetSize, bytes.Length);
+            Assert.AreEqual(header + packets + packetSize, bytes.Length);
         }
 
         [TestMethod]
@@ -36,21 +36,6 @@ namespace TBOTests
 
             Assert.IsTrue(packets.Length == 1);
             Assert.AreEqual("hello", ((PingPacket)packets[0]).contents);
-        }
-
-        public void Shuffle<T>(List<T> list)
-        {
-            var rng = new Random();
-
-            int n = list.Count;
-            while (n > 1)
-            {
-                n--;
-                int k = rng.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
-            }
         }
 
         [TestMethod]
@@ -67,15 +52,11 @@ namespace TBOTests
             for (int i = Count / 2; i < Count; i++) packets.Add(new AuthenticationPacket(contents[i]));
             
             var bytes = PacketSerializer.Serialize(packets.ToArray());
-
-            var size = contents.Sum(p => p.Length) + packets.Count * 5 + 4;
-
-            Assert.AreEqual(size, bytes.Length);
-
+            
             packets = PacketSerializer.Deserialize(bytes).ToList();
         
-            for (int i = 0; i < Count / 2; i++)     Assert.AreEqual(((PingPacket)packets[i]).contents, contents[i]);
-            for (int i = Count / 2; i < Count; i++) Assert.AreEqual(((AuthenticationPacket)packets[i]).contents, contents[i]);
+            for (int i = 0; i < Count / 2; i++)     Assert.AreEqual(contents[i], ((PingPacket)packets[i]).contents);
+            for (int i = Count / 2; i < Count; i++) Assert.AreEqual(contents[i], ((AuthenticationPacket)packets[i]).contents);
         }
     }
 }

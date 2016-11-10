@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace TBOLib.Packets
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct AuthenticationPacket : IPacket
     {
         #region Fields
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
         public readonly string contents;
         #endregion
 
@@ -27,11 +28,6 @@ namespace TBOLib.Packets
         public AuthenticationPacket(string contents)
         {
             this.contents = contents;
-        }
-
-        public int Size()
-        {
-            return contents.Length;
         }
     }
 }

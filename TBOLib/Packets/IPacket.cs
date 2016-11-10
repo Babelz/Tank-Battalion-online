@@ -20,7 +20,5 @@ namespace TBOLib.Packets
             get;
         }
         #endregion
-
-        int Size();
     }
 }
