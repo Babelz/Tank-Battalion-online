@@ -40,7 +40,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IniFile.cs" />
+    <Compile Include="Packets\IPacket.cs" />
     <Compile Include="Packets\PacketType.cs" />
+    <Compile Include="Packets\PingPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

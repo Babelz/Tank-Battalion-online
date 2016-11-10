@@ -15,6 +15,11 @@ namespace TBOLib.Packets
         Unknown = 0,
 
         /// <summary>
+        /// Ping packet.
+        /// </summary>
+        Ping,
+
+        /// <summary>
         /// Packet of type that has data related to 
         /// the new client that is attempting to connect
         /// the server.
@@ -37,6 +42,11 @@ namespace TBOLib.Packets
         GetClientData,
 
         /// <summary>
+        /// Packet that contains game data.
+        /// </summary>
+        GameData,
+
+        /// <summary>
         /// Packet that contains player data.
         /// </summary>
         PlayerData,
@@ -55,11 +65,6 @@ namespace TBOLib.Packets
         /// Contains the whole game state that lives inside the server.
         /// </summary>
         GameStateSync,
-
-        /// <summary>
-        /// Player got hit by a projectile.
-        /// </summary>
-        PlayerHit,
 
         /// <summary>
         /// Round has ended.
