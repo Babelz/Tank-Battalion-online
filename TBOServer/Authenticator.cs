@@ -25,13 +25,14 @@ namespace TBOServer
 
         public void Authenticate(TcpClient client)
         {
-            var data    = string.Format("VERSION: {0} | TIME: {1}", Configuration.Version, DateTime.Now);
+            //    var data    = string.Format("VERSION: {0} | TIME: {1}", Configuration.Version, DateTime.Now);
 
-            var packet  = new AuthenticationPacket(data);
+            //    var packet  = new AuthenticationPacket(data);
 
-            var 
+            //    var 
 
-            client.Client.BeginSend(buffer, 0, buffer.Lenght, SocketFlags.None, BeginSendCallback, client);
+            //    client.Client.BeginSend(buffer, 0, buffer.Lenght, SocketFlags.None, BeginSendCallback, client);
+            //
         }
 
         public delegate void AuthenticatorEventHandler(TcpClient client);

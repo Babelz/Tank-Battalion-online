@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace TBOLib.Packets
 {
-    [Serializable()]
     [StructLayout(LayoutKind.Sequential)]
     public struct AuthenticationPacket : IPacket
     {
@@ -28,6 +27,11 @@ namespace TBOLib.Packets
         public AuthenticationPacket(string contents)
         {
             this.contents = contents;
+        }
+
+        public int Size()
+        {
+            return contents.Length;
         }
     }
 }

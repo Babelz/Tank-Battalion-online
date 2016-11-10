@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 namespace TBOLib.Packets
 {
-    [Serializable()]
     [StructLayout(LayoutKind.Sequential)]
     public struct PingPacket : IPacket
     {
-        #region Fields
+        #region Fields 
         public readonly string contents;
         #endregion
 
@@ -28,6 +27,11 @@ namespace TBOLib.Packets
         public PingPacket(string contents)
         {
             this.contents = contents;
+        }
+
+        public int Size()
+        {
+            return contents.Length;
         }
     }
 }
