@@ -12,6 +12,8 @@ namespace TBOServer
         #region Default values
         private const int DefaultPort           = 1337;
         private const int DefaultLobbiesCount   = 1;
+
+        private static readonly string DefaultVersion = "DEFAULT_VERSION";
         #endregion
 
         #region Fields
@@ -31,6 +33,13 @@ namespace TBOServer
             get
             {
                 return configuration == null ? DefaultLobbiesCount : int.Parse(configuration.Read("lobbies"));
+            }
+        }
+        public static string Version
+        {
+            get
+            {
+                return configuration == null ? DefaultVersion : configuration.Read("version");
             }
         }
         #endregion

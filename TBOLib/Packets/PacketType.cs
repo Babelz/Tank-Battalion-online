@@ -79,6 +79,11 @@ namespace TBOLib.Packets
         /// <summary>
         /// Game has ended.
         /// </summary>
-        GameEnd
+        GameEnd,
+
+        /// <summary>
+        /// Packet used to authenticate/validate the clients.
+        /// </summary>
+        Authentication
     }
 }

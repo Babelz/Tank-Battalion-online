@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TBOLib.Packets
 {
-    public struct PingPacket : IPacket
+    public struct AuthenticationPacket : IPacket
     {
         #region Fields
         public readonly string contents;
@@ -17,12 +17,12 @@ namespace TBOLib.Packets
         {
             get
             {
-                return PacketType.Ping;
+                return PacketType.Authentication;
             }
         }
         #endregion
 
-        public PingPacket(string contents)
+        public AuthenticationPacket(string contents)
         {
             this.contents = contents;
         }
