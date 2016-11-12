@@ -6,10 +6,16 @@ using System.Threading.Tasks;
 
 namespace TBOServer
 {
+    // 0 - empty
+    // 1 - blocked tile
+    // 2 - spawn
+
     public struct MapData
     {
         public readonly int width;
         public readonly int height;
+
+        public readonly int maxPlayers;
 
         public readonly byte[] tiles;
 
@@ -18,15 +24,13 @@ namespace TBOServer
             this.width  = width;
             this.height = height;
             this.tiles  = tiles;
+
+            maxPlayers  = tiles.Count(t => t == 2);
         }
     }
 
     public static class Maps
     {
-        // 0 - empty
-        // 1 - blocked tile
-        // 2 - spawn
-
         #region Map objects
         public static readonly MapData Map1v1;
         #endregion

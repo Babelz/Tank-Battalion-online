@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TBOLib</RootNamespace>
     <AssemblyName>TBOLib</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -46,6 +46,7 @@
     <Compile Include="PacketSerializer.cs" />
     <Compile Include="Packets\AuthenticationPacket.cs" />
     <Compile Include="Packets\IPacket.cs" />
+    <Compile Include="Packets\MapDataPacket.cs" />
     <Compile Include="Packets\PacketType.cs" />
     <Compile Include="Packets\PingPacket.cs" />
     <Compile Include="Packets\ServerStatusPacket.cs" />
