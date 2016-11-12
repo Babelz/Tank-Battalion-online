@@ -8,7 +8,7 @@ namespace TBOLib
 {
     public static class ByteUtils
     {
-        public static int NextPowerOfTwo(int value)
+        public static ulong NextPowerOfTwo(ulong value)
         {
             value--;
 

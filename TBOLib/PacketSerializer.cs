@@ -13,28 +13,6 @@ namespace TBOLib
 {
     public static class PacketSerializer
     {
-        #region Packet data helper struct
-        private struct PacketData
-        {
-            public PacketType   packetType;
-            public Type         type;
-            public int          size;
-        }
-        #endregion
-
-        #region Packet types dictionary
-        private static readonly Dictionary<PacketType, Type> types;
-        #endregion
-
-        static PacketSerializer()
-        {
-            types = new Dictionary<PacketType, Type>()
-            {
-                { PacketType.Ping, typeof(PingPacket) },
-                { PacketType.Authentication, typeof(AuthenticationPacket) }
-            };
-        }
-
         // Packet structure:
         // [4-bytes count of packets][packet types (byte per each)][packet data]
 
@@ -92,38 +70,34 @@ namespace TBOLib
         {
             var headerSize   = sizeof(int);
             var packetsCount = BitConverter.ToInt32(buffer, 0);
-            var packetDatas  = new PacketData[packetsCount];
+            var packetTypes  = new PacketType[packetsCount];
             var bufferIndex  = headerSize;
 
             // Extract packet data.
             for (var i = 0; i < packetsCount; i++)
             {
-                PacketData packetData;
-
-                packetData.packetType = (PacketType)buffer[bufferIndex];
-                packetData.type       = types[packetData.packetType];
-                packetData.size       = Marshal.SizeOf(packetData.type);
-
-                packetDatas[i]        = packetData;
-
+                packetTypes[i] = (PacketType)buffer[bufferIndex];
+                
                 bufferIndex++;
             }
 
             // Create packets.
-            var packets     = new IPacket[packetDatas.Length];
-            var handle      = Marshal.AllocHGlobal(packetDatas.Max(p => p.size));
+            var packets     = new IPacket[packetTypes.Length];
+            var handle      = Marshal.AllocHGlobal(packetTypes.Max(p => Packet.GetSize(p)));
 
             bufferIndex     = headerSize + packetsCount; 
 
             for (var i = 0; i < packets.Length; i++)
             {
-                var packetData = packetDatas[i];
+                var packetType = packetTypes[i];
+                var packetSize = Packet.GetSize(packetType);
+                var type       = Packet.GetType(packetType);
+
+                Marshal.Copy(buffer, bufferIndex, handle, packetSize);
                 
-                Marshal.Copy(buffer, bufferIndex, handle, packetData.size);
+                var packet = (IPacket)Marshal.PtrToStructure(handle, type);
                 
-                var packet = (IPacket)Marshal.PtrToStructure(handle, packetData.type);
-                
-                bufferIndex += packetData.size;
+                bufferIndex += packetSize;
                 packets[i]  = packet;
             }
             

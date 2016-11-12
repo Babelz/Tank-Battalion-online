@@ -7,15 +7,25 @@ namespace TBOClient
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
-    public class Game1 : Game
+    public class TBOGame : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+        #region Fields
+        private readonly GraphicsDeviceManager graphics;
 
-        public Game1()
+        private SpriteBatch spriteBatch;
+
+        private GameInfoLog infoLog;
+        #endregion
+
+        public TBOGame()
         {
-            graphics = new GraphicsDeviceManager(this);
-            Content.RootDirectory = "Content";
+            graphics                            = new GraphicsDeviceManager(this);
+            graphics.PreferredBackBufferWidth   = 1280;
+            graphics.PreferredBackBufferHeight  = 720;
+            graphics.PreferMultiSampling        = true;
+            graphics.ApplyChanges();
+
+            Content.RootDirectory               = "Content";
         }
 
         /// <summary>
@@ -26,7 +36,12 @@ namespace TBOClient
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            Services.AddService(spriteBatch);
+
+            infoLog = new GameInfoLog(this);
+            Components.Add(infoLog);
 
             base.Initialize();
         }
@@ -38,8 +53,6 @@ namespace TBOClient
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-
             // TODO: use this.Content to load your game content here
         }
 
@@ -73,7 +86,7 @@ namespace TBOClient
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
 

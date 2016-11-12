@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,14 +19,7 @@ namespace TBOLib.Packets
         /// Ping packet.
         /// </summary>
         Ping,
-
-        /// <summary>
-        /// Packet of type that has data related to 
-        /// the new client that is attempting to connect
-        /// the server.
-        /// </summary>
-        ClientConnected,
-
+        
         /// <summary>
         /// Client has joined the server.
         /// </summary>
@@ -35,12 +29,7 @@ namespace TBOLib.Packets
         /// Client has joined a lobby.
         /// </summary>
         ClientJoinedLobby,
-
-        /// <summary>
-        /// Server is asking the client for the client data.
-        /// </summary>
-        GetClientData,
-
+        
         /// <summary>
         /// Packet that contains game data.
         /// </summary>
@@ -67,23 +56,79 @@ namespace TBOLib.Packets
         GameStateSync,
 
         /// <summary>
-        /// Round has ended.
+        /// Contains data about the status of the round.
         /// </summary>
-        RoundEnd,
-
+        RoundStatus,
+        
         /// <summary>
-        /// Round has started.
+        /// Contains data about the game status.
         /// </summary>
-        RoundStart,
-
-        /// <summary>
-        /// Game has ended.
-        /// </summary>
-        GameEnd,
+        GameStatus,
 
         /// <summary>
         /// Packet used to authenticate/validate the clients.
         /// </summary>
         Authentication
+    }
+
+    public static class Packet
+    {
+        #region Fields
+        private static readonly Type[] types;
+
+        private static readonly int[] sizes;
+
+        private static readonly int maxSize;
+        #endregion
+
+        static Packet()
+        {
+            types = new Type[]
+            {
+                null,
+                typeof(PingPacket),
+                null, // typeof(ClientJoinedPacket),
+                null, // typeof(ClientJoinedLobbyPacket),
+                null, // typeof(PlayerDataPacket),
+                null, // typeof(InputPacket),
+                null, // typeof(MapDataPacket), 
+                null, // typeof(GameStateSyncPacket),
+                null, // typeof(RoundStatusPacket),
+                null, // typeof(GameStatusPacket),
+                typeof(AuthenticationPacket)
+            };
+
+            sizes = new int[]
+            {
+                0,
+                Marshal.SizeOf(typeof(PingPacket)),
+                0, // Marshal.SizeOf(typeof(ClientJoinedPacket)),
+                0, // Marshal.SizeOf(typeof(ClientJoinedLobbyPacket)),
+                0, // Marshal.SizeOf(typeof(PlayerDataPacket)),
+                0, // Marshal.SizeOf(typeof(InputPacket)),
+                0, // Marshal.SizeOf(typeof(MapDataPacket)), 
+                0, // Marshal.SizeOf(typeof(GameStateSyncPacket)),
+                0, // Marshal.SizeOf(typeof(RoundStatusPacket)),
+                0, // Marshal.SizeOf(typeof(GameStatusPacket)),
+                Marshal.SizeOf(typeof(AuthenticationPacket))
+            };
+
+            maxSize = sizes.Max();
+        }
+
+        public static Type GetType(PacketType type)
+        {
+            return types[(int)type];
+        }
+
+        public static int GetSize(PacketType type)
+        {
+            return sizes[(int)type];
+        }
+
+        public static int GetMaxSize()
+        {
+            return maxSize;
+        }
     }
 }
