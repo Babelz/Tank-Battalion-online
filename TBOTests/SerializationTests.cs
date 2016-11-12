@@ -49,14 +49,15 @@ namespace TBOTests
             for (int i = 0; i < Count; i++) contents.Add("STR: " + i.ToString());
 
             for (int i = 0; i < Count / 2; i++)     packets.Add(new PingPacket(contents[i]));
-            for (int i = Count / 2; i < Count; i++) packets.Add(new AuthenticationPacket(contents[i]));
+            for (int i = Count / 2; i < Count; i++) packets.Add(new AuthenticationPacket(contents[i], contents[i]));
             
             var bytes = PacketSerializer.Serialize(packets.ToArray());
             
             packets = PacketSerializer.Deserialize(bytes).ToList();
         
             for (int i = 0; i < Count / 2; i++)     Assert.AreEqual(contents[i], ((PingPacket)packets[i]).contents);
-            for (int i = Count / 2; i < Count; i++) Assert.AreEqual(contents[i], ((AuthenticationPacket)packets[i]).contents);
+            for (int i = Count / 2; i < Count; i++) Assert.AreEqual(contents[i], ((AuthenticationPacket)packets[i]).version);
+            for (int i = Count / 2; i < Count; i++) Assert.AreEqual(contents[i], ((AuthenticationPacket)packets[i]).time);
         }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Net.Sockets;
 using TBOLib;
+using TBOLib.Packets;
 
 namespace TBOClient
 {
@@ -13,9 +14,7 @@ namespace TBOClient
     {
         #region Fields
         private readonly GraphicsDeviceManager graphics;
-
-        private readonly IniFile config;
-
+        
         private SpriteBatch spriteBatch;
 
         private GameInfoLog infoLog;
@@ -32,8 +31,6 @@ namespace TBOClient
             graphics.ApplyChanges();
 
             Content.RootDirectory               = "Content";
-
-            config                              = new IniFile("cfg.ini");
         }
 
         #region Event handlers
@@ -52,8 +49,8 @@ namespace TBOClient
 
         private void Connect()
         {
-            var address = config.Read("address", "server");
-            var port    = int.Parse(config.Read("port", "server"));
+            var address = Configuration.ServerAddress;
+            var port    = Configuration.Port;
 
             infoLog.AddEntry(EntryType.Message, string.Format("connecting to {0}:{1}", address, port));
 
@@ -72,29 +69,34 @@ namespace TBOClient
 
                     switch (packet.Type)
                     {
-                        case TBOLib.Packets.PacketType.Unknown:
+                        case PacketType.Unknown:
                             break;
-                        case TBOLib.Packets.PacketType.Ping:
+                        case PacketType.Ping:
                             break;
-                        case TBOLib.Packets.PacketType.ClientJoined:
+                        case PacketType.ClientJoined:
                             break;
-                        case TBOLib.Packets.PacketType.ClientJoinedLobby:
+                        case PacketType.ClientJoinedLobby:
                             break;
-                        case TBOLib.Packets.PacketType.GameData:
+                        case PacketType.GameData:
                             break;
-                        case TBOLib.Packets.PacketType.PlayerData:
+                        case PacketType.PlayerData:
                             break;
-                        case TBOLib.Packets.PacketType.Input:
+                        case PacketType.Input:
                             break;
-                        case TBOLib.Packets.PacketType.MapData:
+                        case PacketType.MapData:
                             break;
-                        case TBOLib.Packets.PacketType.GameStateSync:
+                        case PacketType.GameStateSync:
                             break;
-                        case TBOLib.Packets.PacketType.RoundStatus:
+                        case PacketType.RoundStatus:
                             break;
-                        case TBOLib.Packets.PacketType.GameStatus:
+                        case PacketType.GameStatus:
                             break;
-                        case TBOLib.Packets.PacketType.Authentication:
+                        case PacketType.Authentication:
+                            var authentication = (AuthenticationPacket)packet;
+
+                            authentication.response = string.Format("NAME:{0}", Configuration.Name);
+
+                            client.Send(authentication);
                             break;
                         default:
                             break;

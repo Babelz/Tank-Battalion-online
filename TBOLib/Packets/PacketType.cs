@@ -68,11 +68,21 @@ namespace TBOLib.Packets
         /// <summary>
         /// Packet used to authenticate/validate the clients.
         /// </summary>
-        Authentication
+        Authentication,
+
+        /// <summary>
+        /// Packet that contains information about the server.
+        /// </summary>
+        ServerStatus
     }
 
     public static class Packet
     {
+        #region Constant fields
+        public const int HeaderSize     = sizeof(int);
+        public const int PacketTypeSize = sizeof(byte);
+        #endregion
+
         #region Fields
         private static readonly Type[] types;
 
@@ -96,7 +106,8 @@ namespace TBOLib.Packets
                 null, // typeof(RoundStatusPacket),
                 null, // typeof(GameStatusPacket),
                 null,
-                typeof(AuthenticationPacket)
+                typeof(AuthenticationPacket),
+                null
             };
 
             sizes = new int[]
@@ -112,7 +123,8 @@ namespace TBOLib.Packets
                 0, // Marshal.SizeOf(typeof(RoundStatusPacket)),
                 0, // Marshal.SizeOf(typeof(GameStatusPacket)),
                 0,
-                Marshal.SizeOf(typeof(AuthenticationPacket))
+                Marshal.SizeOf(typeof(AuthenticationPacket)),
+                0
             };
 
             maxSize = sizes.Max();

@@ -43,12 +43,9 @@ namespace TBOLib
         {
             var packetsCount = packets.Length;
             var types        = packets.Select(p => (byte)p.Type).ToArray();
-
-            var headerSize   = sizeof(int);
-            var typesSize    = sizeof(byte) * packets.Length;
             var dataSize     = packets.Sum(p => Marshal.SizeOf(p));
 
-            var bufferSize   = headerSize + typesSize + dataSize;
+            var bufferSize   = Packet.HeaderSize + Packet.PacketTypeSize * types.Length + dataSize;
 
             if (buffer == null)                  buffer = new byte[bufferSize];
             else if (buffer.Length < bufferSize) throw new ArgumentException("buffer is too small");
@@ -70,7 +67,7 @@ namespace TBOLib
             var handle          = Marshal.AllocHGlobal(packetBuffer.Length);
 
             // Start writing from the end of header + types region.
-            bufferIndex = headerSize + typesSize;
+            bufferIndex = Packet.HeaderSize + Packet.PacketTypeSize * types.Length;
 
             for (var i = 0; i < packets.Length; i++)
             {
@@ -88,10 +85,9 @@ namespace TBOLib
 
         public static IPacket[] Deserialize(byte[] buffer)
         {
-            var headerSize   = sizeof(int);
             var packetsCount = BitConverter.ToInt32(buffer, 0);
             var packetTypes  = new PacketType[packetsCount];
-            var bufferIndex  = headerSize;
+            var bufferIndex  = Packet.HeaderSize;
 
             // Extract packet data.
             for (var i = 0; i < packetsCount; i++)
@@ -105,7 +101,7 @@ namespace TBOLib
             var packets     = new IPacket[packetTypes.Length];
             var handle      = Marshal.AllocHGlobal(packetTypes.Max(p => Packet.GetSize(p)));
 
-            bufferIndex     = headerSize + packetsCount; 
+            bufferIndex     = Packet.HeaderSize + Packet.PacketTypeSize * packetsCount; 
 
             for (var i = 0; i < packets.Length; i++)
             {

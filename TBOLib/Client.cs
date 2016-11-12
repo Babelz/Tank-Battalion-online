@@ -75,7 +75,7 @@ namespace TBOLib
 
         public void Send(IPacket packet)
         {
-            ReserveBufferStorage(ref sendBuffer, Packet.GetSize(packet.Type));
+            ReserveBufferStorage(ref sendBuffer, Packet.GetSize(packet.Type) + Packet.HeaderSize + Packet.PacketTypeSize);
             
             PacketSerializer.Serialize(packet, ref sendBuffer);
 

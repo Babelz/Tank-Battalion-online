@@ -13,7 +13,7 @@ namespace TBOServer
         private const int DefaultPort           = 1337;
         private const int DefaultLobbiesCount   = 1;
 
-        private static readonly string DefaultVersion = "DEFAULT_VERSION";
+        private static readonly string DefaultVersion = "v000";
         #endregion
 
         #region Fields
@@ -25,21 +25,21 @@ namespace TBOServer
         {
             get
             {
-                return !configuration.KeyExists("port") ? DefaultPort : int.Parse(configuration.Read("port"));
+                return !configuration.KeyExists("port", "server") ? DefaultPort : int.Parse(configuration.GetValue("port", "server"));
             }
         }
         public static int Lobbies
         {
             get
             {
-                return !configuration.KeyExists("lobbies") ? DefaultLobbiesCount : int.Parse(configuration.Read("lobbies"));
+                return !configuration.KeyExists("lobbies", "server") ? DefaultLobbiesCount : int.Parse(configuration.GetValue("lobbies", "server"));
             }
         }
         public static string Version
         {
             get
             {
-                return !configuration.KeyExists("version") ? DefaultVersion : configuration.Read("version");
+                return !configuration.KeyExists("version", "server") ? DefaultVersion : configuration.GetValue("version", "server");
             }
         }
         #endregion

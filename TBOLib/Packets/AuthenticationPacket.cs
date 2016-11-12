@@ -11,10 +11,10 @@ namespace TBOLib.Packets
     public struct AuthenticationPacket : IPacket
     {
         #region Fields
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 4)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)]
         public string version;
 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
         public string time;
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
