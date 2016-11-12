@@ -29,6 +29,18 @@ namespace TBOServer
         }
     }
 
+    public static class Tiles
+    {
+        #region Constants
+        public const byte Empty     = 0;
+        public const byte Blocked   = 1;
+        public const byte Spawn     = 2;
+
+        public const int Width      = 32;
+        public const int Height     = 32;
+        #endregion
+    }
+
     public static class Maps
     {
         #region Map objects

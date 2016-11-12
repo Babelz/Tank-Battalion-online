@@ -1,4 +1,6 @@
-﻿using FarseerPhysics.Dynamics;
+﻿using FarseerPhysics;
+using FarseerPhysics.Dynamics;
+using FarseerPhysics.Factories;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -16,11 +18,17 @@ namespace TBOServer
         {
             #region Fields
             public readonly Client client;
+
+            public Body body;
+
+            public int health;
             #endregion
 
             public Player(Client client)
             {
                 this.client = client;
+
+                health = 3;
             }
         }
 
@@ -45,7 +53,7 @@ namespace TBOServer
 
         #region Fields
         private readonly List<Player> players;
-        private readonly List<Body> map;
+        private readonly List<Body> entitites;
         private readonly World world;        
         #endregion
 
@@ -55,16 +63,49 @@ namespace TBOServer
 
         public Match()
         {
-            world   = new World(Vector2.Zero);
-            players = new List<Player>();
-            map     = new List<Body>();
+            world     = new World(Vector2.Zero);
+            players   = new List<Player>();
+            entitites = new List<Body>();
+        }
+
+        private Body CreatePlayerBody(int x, int y, Player player)
+        {
+            var body = BodyFactory.CreateRectangle(world,
+                                                   ConvertUnits.ToSimUnits(Tiles.Width),
+                                                   ConvertUnits.ToSimUnits(Tiles.Height),
+                                                   10.0f,
+                                                   player);
+            body.IsStatic       = false;
+            body.Mass           = 80.0f;
+            body.Friction       = 0.2f;
+            body.Restitution    = 0.2f;
+            body.BodyType       = BodyType.Dynamic;
+            body.FixedRotation  = true;
+            body.UserData       = player;
+        }
+        private Body CreateTileBody(int x, int y)
+        {
+            var body = BodyFactory.CreateRectangle(world,
+                                                   ConvertUnits.ToSimUnits(width),
+                                                   ConvertUnits.ToSimUnits(height),
+                                                   10.0f,
+                                                   owner);
+
+            body.Position       = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
+            body.IsStatic       = true;
+            body.Mass           = 500.0f;
+            body.Friction       = 0.2f;
+            body.Restitution    = 0.2f;
+            body.BodyType       = BodyType.Static;
+            body.FixedRotation  = true;
         }
 
         public void Initialize(MapData map, List<Client> clients)
         {
             for (var i = 0; i < clients.Count; i++) players.Add(new Player(clients[i]));
-
-            var tileIndex = 0;
+            
+            var tileIndex   = 0;
+            var playerIndex = 0;
 
             for (var i = 0; i < map.height; i++)
             {
@@ -72,14 +113,10 @@ namespace TBOServer
                 {
                     var tile = map.tiles[tileIndex++];
 
-                    if (tile == 0) continue;
+                    if (tile == Tiles.Empty) continue;
 
-                    if (tile == 1)
-                    {
-                    }
-                    else if (tile == 2)
-                    {
-                    }
+                    if (tile == Tiles.Blocked)      entitites.Add(CreatePlayerBody(j * Tiles.Width, i * Tiles.Height, players[playerIndex++]));
+                    else if (tile == Tiles.Spawn)   entitites.Add(CreateTileBody(j * Tiles.Width, i * Tiles.Height));
                 }
             }
         }
