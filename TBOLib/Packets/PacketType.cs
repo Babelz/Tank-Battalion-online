@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TBOLib.Packets
 {
-    public enum PacketType : byte
+    public enum PacketType : int
     {
         /// <summary>
         /// Packet type is not specified, packets
@@ -95,6 +95,7 @@ namespace TBOLib.Packets
                 null, // typeof(GameStateSyncPacket),
                 null, // typeof(RoundStatusPacket),
                 null, // typeof(GameStatusPacket),
+                null,
                 typeof(AuthenticationPacket)
             };
 
@@ -110,6 +111,7 @@ namespace TBOLib.Packets
                 0, // Marshal.SizeOf(typeof(GameStateSyncPacket)),
                 0, // Marshal.SizeOf(typeof(RoundStatusPacket)),
                 0, // Marshal.SizeOf(typeof(GameStatusPacket)),
+                0,
                 Marshal.SizeOf(typeof(AuthenticationPacket))
             };
 
@@ -118,12 +120,16 @@ namespace TBOLib.Packets
 
         public static Type GetType(PacketType type)
         {
-            return types[(int)type];
+            var index = (int)type;
+
+            return types[index];
         }
 
         public static int GetSize(PacketType type)
         {
-            return sizes[(int)type];
+            var index = (int)type;
+
+            return sizes[index];
         }
 
         public static int GetMaxSize()

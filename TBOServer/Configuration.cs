@@ -25,28 +25,28 @@ namespace TBOServer
         {
             get
             {
-                return configuration == null ? DefaultPort : int.Parse(configuration.Read("port"));
+                return !configuration.KeyExists("port") ? DefaultPort : int.Parse(configuration.Read("port"));
             }
         }
         public static int Lobbies
         {
             get
             {
-                return configuration == null ? DefaultLobbiesCount : int.Parse(configuration.Read("lobbies"));
+                return !configuration.KeyExists("lobbies") ? DefaultLobbiesCount : int.Parse(configuration.Read("lobbies"));
             }
         }
         public static string Version
         {
             get
             {
-                return configuration == null ? DefaultVersion : configuration.Read("version");
+                return !configuration.KeyExists("version") ? DefaultVersion : configuration.Read("version");
             }
         }
         #endregion
 
         static Configuration()
         {
-            configuration = new IniFile("cfg");
+            configuration = new IniFile("cfg.ini");
         }
     }
 }

@@ -37,6 +37,8 @@ namespace TBOServer
 
         public void BeginListen()
         {
+            listener.Start();
+
             listener.BeginAcceptSocket(BeginAcceptCallback, listener);
         }
 

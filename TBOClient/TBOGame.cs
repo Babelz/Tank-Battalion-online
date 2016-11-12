@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Net.Sockets;
+using TBOLib;
 
 namespace TBOClient
 {
@@ -12,9 +14,13 @@ namespace TBOClient
         #region Fields
         private readonly GraphicsDeviceManager graphics;
 
+        private readonly IniFile config;
+
         private SpriteBatch spriteBatch;
 
         private GameInfoLog infoLog;
+
+        private Client client;
         #endregion
 
         public TBOGame()
@@ -26,14 +32,34 @@ namespace TBOClient
             graphics.ApplyChanges();
 
             Content.RootDirectory               = "Content";
+
+            config                              = new IniFile("cfg.ini");
         }
 
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
+        #region Event handlers
+        private void Client_Connected(Client client)
+        {
+            infoLog.AddEntry(EntryType.Message, "connected!");
+        }
+        #endregion
+
+        private void InitializeClient()
+        {
+            client = new Client();
+
+            client.Connected += Client_Connected;
+        }
+
+        private void Connect()
+        {
+            var address = config.Read("address", "server");
+            var port    = int.Parse(config.Read("port", "server"));
+
+            infoLog.AddEntry(EntryType.Message, string.Format("connecting to {0}:{1}", address, port));
+
+            client.Connect(address, port);
+        }
+
         protected override void Initialize()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -44,51 +70,66 @@ namespace TBOClient
             Components.Add(infoLog);
 
             base.Initialize();
+
+            InitializeClient();
+            Connect();
         }
 
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            // TODO: use this.Content to load your game content here
         }
-
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// game-specific content.
-        /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
         }
 
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
 
-            // TODO: Add your update logic here
+            if (client.HasIncomingPackets())
+            {
+                var packets = client.Receive();
+
+                foreach (var packet in packets)
+                {
+                    switch (packet.Type)
+                    {
+                        case TBOLib.Packets.PacketType.Unknown:
+                            break;
+                        case TBOLib.Packets.PacketType.Ping:
+                            break;
+                        case TBOLib.Packets.PacketType.ClientJoined:
+                            break;
+                        case TBOLib.Packets.PacketType.ClientJoinedLobby:
+                            break;
+                        case TBOLib.Packets.PacketType.GameData:
+                            break;
+                        case TBOLib.Packets.PacketType.PlayerData:
+                            break;
+                        case TBOLib.Packets.PacketType.Input:
+                            break;
+                        case TBOLib.Packets.PacketType.MapData:
+                            break;
+                        case TBOLib.Packets.PacketType.GameStateSync:
+                            break;
+                        case TBOLib.Packets.PacketType.RoundStatus:
+                            break;
+                        case TBOLib.Packets.PacketType.GameStatus:
+                            break;
+                        case TBOLib.Packets.PacketType.Authentication:
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
 
             base.Update(gameTime);
         }
 
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
-
-            // TODO: Add your drawing code here
 
             base.Draw(gameTime);
         }

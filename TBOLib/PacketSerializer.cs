@@ -15,13 +15,31 @@ namespace TBOLib
     {
         // Packet structure:
         // [4-bytes count of packets][packet types (byte per each)][packet data]
-
+        
         public static byte[] Serialize(IPacket packet)
         {
-            return Serialize(new IPacket[] { packet });
+            byte[] buffer = null;
+
+            Serialize(packet, ref buffer);
+
+            return buffer;
         }
 
         public static byte[] Serialize(IPacket[] packets)
+        {
+            byte[] buffer = null;
+
+            Serialize(packets, ref buffer);
+
+            return buffer;
+        }
+
+        public static void Serialize(IPacket packet, ref byte[] buffer)
+        {
+            Serialize(new IPacket[] { packet }, ref buffer);
+        }
+
+        public static void Serialize(IPacket[] packets, ref byte[] buffer)
         {
             var packetsCount = packets.Length;
             var types        = packets.Select(p => (byte)p.Type).ToArray();
@@ -30,9 +48,13 @@ namespace TBOLib
             var typesSize    = sizeof(byte) * packets.Length;
             var dataSize     = packets.Sum(p => Marshal.SizeOf(p));
 
-            var buffer       = new byte[headerSize + typesSize + dataSize];
-            var bufferIndex  = 4;
+            var bufferSize   = headerSize + typesSize + dataSize;
 
+            if (buffer == null)                  buffer = new byte[bufferSize];
+            else if (buffer.Length < bufferSize) throw new ArgumentException("buffer is too small");
+
+            var bufferIndex  = 4;
+            
             // Write header and packets information (4-bytes)
             Array.Copy(BitConverter.GetBytes(packetsCount), buffer, sizeof(int));
             
@@ -62,8 +84,6 @@ namespace TBOLib
             }
 
             Marshal.FreeHGlobal(handle);
-
-            return buffer;
         }
 
         public static IPacket[] Deserialize(byte[] buffer)

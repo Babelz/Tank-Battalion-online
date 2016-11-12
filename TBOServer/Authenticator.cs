@@ -11,18 +11,22 @@ namespace TBOServer
 {
     public sealed class Authenticator
     {
+        #region Constant fields
+        private const int AuthenticationReceiveTimeout = 5000;
+        #endregion
+
         #region State helper struct
         private struct AuthenticationState
         {
-            public TcpClient    client;
-            public byte[]       buffer;
-            public string       auth;
+            public TcpClient            client;
+            public byte[]               buffer;
+            public AuthenticationPacket auth;
         }
         #endregion
 
         #region Events
-        public event AuthenticatorEventHandler AuthenticationFailed;
-        public event AuthenticatorEventHandler AuthenticationSuccess;
+        public event AuthenticationFailedEventHandler AuthenticationFailed;
+        public event AuthenticationSuccessEventHandler AuthenticationSuccess;
         #endregion
 
         public Authenticator()
@@ -33,21 +37,47 @@ namespace TBOServer
         {
             var state = (AuthenticationState)results.AsyncState;
 
-            state.client.Client.BeginReceive(state.buffer, 0, state.buffer.Length, SocketFlags.None, BeginReceiveCallback, state);
+            state.client.ReceiveTimeout = AuthenticationReceiveTimeout;
+
+            var asyncResult = state.client.Client.BeginReceive(state.buffer, 0, state.buffer.Length, SocketFlags.None, BeginReceiveCallback, state);
+            var success     = asyncResult.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(AuthenticationReceiveTimeout));
+
+            if (!success)
+            {
+                AuthenticationFailed?.Invoke(state.client);
+
+                state.client.Close();
+            }
+            else
+            {
+                state.client.ReceiveTimeout = 0;
+            }
         }
         private void BeginReceiveCallback(IAsyncResult results)
         {
             var state     = (AuthenticationState)results.AsyncState;
-            var packet    = PacketSerializer.Deserialize(state.buffer)[0];
-            var contents  = ((AuthenticationPacket)packet).contents;
 
-            if (contents == state.auth) AuthenticationSuccess?.Invoke(state.client);
-            else                        AuthenticationFailed?.Invoke(state.client);
+            // Timeout, socket has been closed.
+            if (state.client.Client == null) return;
+
+            var packet    = (AuthenticationPacket)PacketSerializer.Deserialize(state.buffer)[0];
+            var auth      = state.auth;
+
+            if (packet.version == auth.version &&
+                packet.time == auth.time &&
+                !string.IsNullOrEmpty(packet.response))
+            {
+                AuthenticationSuccess?.Invoke(state.client, packet.response);
+            }
+            else
+            {
+                AuthenticationFailed?.Invoke(state.client);
+            }
         }
 
         public void Authenticate(TcpClient client)
         {
-            var packet = new AuthenticationPacket(string.Format("VERSION: {0} | TIME: {1}", Configuration.Version, DateTime.Now));
+            var packet = new AuthenticationPacket(Configuration.Version, DateTime.Now.ToString());
 
             var buffer = PacketSerializer.Serialize(packet);
 
@@ -60,10 +90,11 @@ namespace TBOServer
                                     {
                                         client  = client,
                                         buffer  = new byte[4096],
-                                        auth    = packet.contents
+                                        auth    = packet
                                     });
         }
 
-        public delegate void AuthenticatorEventHandler(TcpClient client);
+        public delegate void AuthenticationFailedEventHandler(TcpClient client);
+        public delegate void AuthenticationSuccessEventHandler(TcpClient client, string response);
     }
 }

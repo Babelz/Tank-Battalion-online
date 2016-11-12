@@ -18,15 +18,15 @@ namespace TBOLib
         
         public IniFile(string iniPath = null)
         {
-            exe     = Assembly.GetExecutingAssembly().GetName().Name;
+            exe     = Assembly.GetCallingAssembly().GetName().Name;
             path    = new FileInfo(iniPath ?? exe + ".ini").FullName.ToString();
         }
         
         [DllImport("kernel32", CharSet = CharSet.Unicode)]
-        private static extern long WritePrivateProfileString(string Section, string Key, string Value, string FilePath);
+        private static extern long WritePrivateProfileString(string section, string key, string value, string path);
 
         [DllImport("kernel32", CharSet = CharSet.Unicode)]
-        private static extern int GetPrivateProfileString(string Section, string Key, string Default, StringBuilder RetVal, int Size, string FilePath);
+        private static extern int GetPrivateProfileString(string section, string key, string defaultValue, StringBuilder result, int size, string path);
 
         public string Read(string key, string section = null)
         {

@@ -11,8 +11,14 @@ namespace TBOLib.Packets
     public struct AuthenticationPacket : IPacket
     {
         #region Fields
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 4)]
+        public string version;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+        public string time;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public readonly string contents;
+        public string response;
         #endregion
 
         #region Properties
@@ -25,9 +31,12 @@ namespace TBOLib.Packets
         }
         #endregion
 
-        public AuthenticationPacket(string contents)
+        public AuthenticationPacket(string version, string time)
         {
-            this.contents = contents;
+            this.version = version;
+            this.time    = time;
+
+            response     = string.Empty;
         }
     }
 }
