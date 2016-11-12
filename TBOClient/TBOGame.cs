@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Net.Sockets;
 using TBOLib;
 using TBOLib.Packets;
+using System;
 
 namespace TBOClient
 {
@@ -12,6 +13,15 @@ namespace TBOClient
     /// </summary>
     public class TBOGame : Game
     {
+        #region Game state enum
+        private enum GameState
+        {
+            Connecting,
+            Lobby,
+            Gameplay
+        }
+        #endregion
+
         #region Fields
         private readonly GraphicsDeviceManager graphics;
         
@@ -20,6 +30,9 @@ namespace TBOClient
         private GameInfoLog infoLog;
 
         private Client client;
+
+        private ServerStatusPacket? serverState;
+        private GameState gameState;
         #endregion
 
         public TBOGame()
@@ -37,12 +50,14 @@ namespace TBOClient
         private void Client_Connected(Client client)
         {
             infoLog.AddEntry(EntryType.Message, "connected!");
+
+            gameState = GameState.Lobby;
         }
         #endregion
 
         private void InitializeClient()
         {
-            client = new Client();
+            client = new Client(Configuration.Name);
 
             client.Connected += Client_Connected;
         }
@@ -72,6 +87,11 @@ namespace TBOClient
                         case PacketType.Unknown:
                             break;
                         case PacketType.Ping:
+                            var pong = (PingPacket)packet;
+
+                            pong.contents = "PONG";
+
+                            client.Send(pong);
                             break;
                         case PacketType.ClientJoined:
                             break;
@@ -97,6 +117,9 @@ namespace TBOClient
                             authentication.response = string.Format("NAME:{0}", Configuration.Name);
 
                             client.Send(authentication);
+                            break;
+                        case PacketType.ServerStatus:
+                            serverState = (ServerStatusPacket)packet;
                             break;
                         default:
                             break;
@@ -140,7 +163,49 @@ namespace TBOClient
         {
             GraphicsDevice.Clear(Color.Black);
 
+            spriteBatch.Begin();
+
+            // Draw lobby state...
+            if (gameState == GameState.Lobby && serverState != null)
+            {
+                var font = Content.Load<SpriteFont>("info log");
+
+                var online = string.Format("online: {0}", serverState?.playersPlaying + serverState?.playersInLobby);
+                var lobby = string.Format("in lobby: {0}", serverState?.playersInLobby);
+                var playing = string.Format("playing: {0}", serverState?.playersPlaying);
+
+                var position = new Vector2(graphics.PreferredBackBufferWidth / 2.0f, graphics.PreferredBackBufferHeight / 2.0f);
+
+                const float Offset = 32.0f;
+
+                var onlinePos = position;
+                onlinePos.X -= font.MeasureString(online).X / 2.0f;
+                onlinePos.Y += font.MeasureString(online).Y / 2.0f + Offset;
+
+                var lobbyPos = position;
+                lobbyPos.X -= font.MeasureString(lobby).X / 2.0f;
+
+                var playingPos = position;
+                playingPos.X -= font.MeasureString(playing).X / 2.0f;
+                playingPos.Y -= font.MeasureString(playing).Y / 2.0f + Offset;
+
+                spriteBatch.DrawString(font, online, onlinePos, Color.White);
+                spriteBatch.DrawString(font, lobby, lobbyPos, Color.White);
+                spriteBatch.DrawString(font, playing, playingPos, Color.White);
+            }
+
+            spriteBatch.End();
+
+            // Draw gameplay state...
+
             base.Draw(gameTime);
+        }
+
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            client.Close();
+
+            base.OnExiting(sender, args);
         }
     }
 }

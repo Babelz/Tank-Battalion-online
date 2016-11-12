@@ -42,15 +42,16 @@ namespace TBOLib
         }
         #endregion
 
-        public Client()
-            : this(new TcpClient())
+        public Client(string name)
+            : this(new TcpClient(), name)
         {
         }
-        public Client(TcpClient connection)
+        public Client(TcpClient connection, string name)
         {
             Debug.Assert(connection != null);
 
             this.connection = connection;
+            this.name       = name;
         }
 
         private void ReserveBufferStorage(ref byte[] buffer, int requiredLength)
@@ -78,11 +79,26 @@ namespace TBOLib
             ReserveBufferStorage(ref sendBuffer, Packet.GetSize(packet.Type) + Packet.HeaderSize + Packet.PacketTypeSize);
             
             PacketSerializer.Serialize(packet, ref sendBuffer);
-
+            
             var socket = connection.Client;
+
+            if (!socket.Connected) return;
 
             socket.Send(sendBuffer);
         }
+        public void Send(params IPacket[] packets)
+        {
+            ReserveBufferStorage(ref sendBuffer, packets.Sum(p => Packet.GetSize(p.Type)) + Packet.HeaderSize + Packet.PacketTypeSize * packets.Length);
+
+            PacketSerializer.Serialize(packets, ref sendBuffer);
+
+            var socket = connection.Client;
+
+            if (!socket.Connected) return;
+
+            socket.Send(sendBuffer);
+        }
+
         public IPacket[] Receive()
         {
             if (!HasIncomingPackets()) return null;
@@ -99,6 +115,11 @@ namespace TBOLib
         public bool HasIncomingPackets()
         {
             return connection.Client.Available != 0;
+        }
+
+        public void Close()
+        {
+            connection.Close();
         }
 
         public delegate void ClientEventHandler(Client client);

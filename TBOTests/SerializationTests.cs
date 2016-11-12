@@ -56,7 +56,6 @@ namespace TBOTests
             packets = PacketSerializer.Deserialize(bytes).ToList();
         
             for (int i = 0; i < Count / 2; i++)     Assert.AreEqual(contents[i], ((PingPacket)packets[i]).contents);
-            for (int i = Count / 2; i < Count; i++) Assert.AreEqual(contents[i], ((AuthenticationPacket)packets[i]).version);
             for (int i = Count / 2; i < Count; i++) Assert.AreEqual(contents[i], ((AuthenticationPacket)packets[i]).time);
         }
     }

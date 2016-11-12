@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace TBOServer
 {
-    public sealed class PacketRouter
+    public sealed class MatchManager
     {
+        #region Fields
+
+        #endregion
     }
 }

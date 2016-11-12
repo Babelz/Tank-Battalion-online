@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 namespace TBOLib.Packets
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct PingPacket : IPacket
+    public struct ServerStatusPacket : IPacket
     {
-        #region Fields 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 8)]
-        public string contents;
+        #region Fields
+        public int playersInLobby;
+
+        public int playersPlaying;
         #endregion
 
         #region Properties
@@ -20,14 +21,15 @@ namespace TBOLib.Packets
         {
             get
             {
-                return PacketType.Ping;
+                return PacketType.ServerStatus;
             }
         }
         #endregion
 
-        public PingPacket(string contents)
+        public ServerStatusPacket(int playersInLobby, int playersPlaying)
         {
-            this.contents = contents;
+            this.playersInLobby = playersInLobby;
+            this.playersPlaying = playersPlaying;
         }
     }
 }

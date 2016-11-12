@@ -107,7 +107,7 @@ namespace TBOLib.Packets
                 null, // typeof(GameStatusPacket),
                 null,
                 typeof(AuthenticationPacket),
-                null
+                typeof(ServerStatusPacket)
             };
 
             sizes = new int[]
@@ -124,7 +124,7 @@ namespace TBOLib.Packets
                 0, // Marshal.SizeOf(typeof(GameStatusPacket)),
                 0,
                 Marshal.SizeOf(typeof(AuthenticationPacket)),
-                0
+                Marshal.SizeOf(typeof(ServerStatusPacket))
             };
 
             maxSize = sizes.Max();

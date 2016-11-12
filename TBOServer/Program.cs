@@ -6,12 +6,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TBOLib;
 
 namespace TBOServer
 {
     public sealed class Program
     {
         #region Fields
+        private static Matchmaker matchmaker;
         private static Authenticator authenticator;
         private static Listener listener;
         #endregion
@@ -20,6 +22,7 @@ namespace TBOServer
         {
             Console.WriteLine("starting server...");
 
+            matchmaker      = new Matchmaker();
             authenticator   = new Authenticator();
             listener        = new Listener();
 
@@ -29,6 +32,7 @@ namespace TBOServer
             listener.ClientConnectd             += Listener_ClientConnectd;
 
             listener.BeginListen();
+            matchmaker.Start();
             
             Console.WriteLine("server started, waiting for clients");
 
@@ -42,11 +46,17 @@ namespace TBOServer
             Console.WriteLine("autheticating...");
 
             authenticator.Authenticate(client);
+
+            listener.BeginListen();
         }
         private static void Authenticator_AuthenticationSuccess(TcpClient client, string response)
         {
             Console.WriteLine("authentication ok, adding player to the matchmaker...");
             Console.WriteLine("client responded: " + response);
+
+            var name = response.Substring(response.IndexOf(":") + 1).Trim();
+
+            matchmaker.Add(new Client(client, name));
         }
         private static void Authenticator_AuthenticationFailed(TcpClient client)
         {
