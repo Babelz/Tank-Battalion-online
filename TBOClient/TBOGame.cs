@@ -60,38 +60,16 @@ namespace TBOClient
             client.Connect(address, port);
         }
 
-        protected override void Initialize()
+        private void ProcessIncomingPackets()
         {
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            Services.AddService(spriteBatch);
-
-            infoLog = new GameInfoLog(this);
-            Components.Add(infoLog);
-
-            base.Initialize();
-
-            InitializeClient();
-            Connect();
-        }
-
-        protected override void LoadContent()
-        {
-        }
-        protected override void UnloadContent()
-        {
-        }
-
-        protected override void Update(GameTime gameTime)
-        {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
-
             if (client.HasIncomingPackets())
             {
                 var packets = client.Receive();
 
-                foreach (var packet in packets)
+                for (var i = 0; i < packets.Length; i++)
                 {
+                    var packet = packets[i];
+
                     switch (packet.Type)
                     {
                         case TBOLib.Packets.PacketType.Unknown:
@@ -123,6 +101,35 @@ namespace TBOClient
                     }
                 }
             }
+        }
+
+        protected override void Initialize()
+        {
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            Services.AddService(spriteBatch);
+
+            infoLog = new GameInfoLog(this);
+            Components.Add(infoLog);
+
+            base.Initialize();
+
+            InitializeClient();
+            Connect();
+        }
+
+        protected override void LoadContent()
+        {
+        }
+        protected override void UnloadContent()
+        {
+        }
+
+        protected override void Update(GameTime gameTime)
+        {
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
+
+            ProcessIncomingPackets();
 
             base.Update(gameTime);
         }
