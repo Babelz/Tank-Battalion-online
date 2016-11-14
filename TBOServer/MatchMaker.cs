@@ -14,6 +14,8 @@ namespace TBOServer
     {
         #region Fields
         private readonly List<Client> clients;
+
+        private readonly List<Client> disconnected;
         #endregion
 
         #region Properties
@@ -28,18 +30,15 @@ namespace TBOServer
 
         public Matchmaker()
         {
-            clients = new List<Client>();
+            clients         = new List<Client>();
+            disconnected    = new List<Client>();
         }
 
         #region Event handlers
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            SendPings();
-
-            Thread.Sleep(1000);
-
-            ReceivePings();
-
+            ValidateAndPing();
+            
             CreateMatches();
         }
         #endregion
@@ -48,45 +47,46 @@ namespace TBOServer
         {
         }
 
-        private void SendPings()
+        private void ValidateAndPing()
         {
+            // Check last ping results. If there still are clients at 
+            // disconnected list, they have not responded to our ping
+            // request and are disconnected. Remove them.
+            for (var i = 0; i < disconnected.Count; i++) disconnected[i].ListenOnce();
+
+            while (disconnected.Count != 0)
+            {
+                Console.WriteLine("client {0} did not respond to ping, disconnecting...", disconnected[0].Name);
+
+                disconnected[0].Close();
+                disconnected.RemoveAt(0);
+            }
+
+            // Send new ping and status packet.
             var ping    = new PingPacket("PING");
             var status  = new ServerStatusPacket(clients.Count, 0);
-            
-            for (var i = 0; i < clients.Count; i++) clients[i].Send(ping, status);
-        }
-        private void ReceivePings()
-        {
-            var disconnectedClients = new List<Client>();
 
             foreach (var client in clients)
             {
-                if (!client.HasIncomingPackets())
-                {
-                    Console.WriteLine("player {0} disconnected during matchmaking...", client.Name);
+                client.Received += Client_Received;
 
-                    disconnectedClients.Add(client);
-                }
-                else
-                {
-                    var pong = (PingPacket)client.Receive()[0];
+                client.Send(ping, status);
 
-                    if (pong.contents != "PONG")
-                    {
-                        Console.WriteLine("player {0} did not answer to ping request, disconnecting", client.Name);
-
-                        disconnectedClients.Add(client);
-                    }
-                }
+                disconnected.Add(client);
             }
+        }
 
-            for (var i = 0; i < disconnectedClients.Count; i++) clients.Remove(disconnectedClients[i]);
+        private void Client_Received(Client client, IPacket packet)
+        {
+            // Get pong packet.
+            var pong = (PingPacket)packet;
+            
+            // Unhook event.
+            client.Received -= Client_Received;
 
-            while (disconnectedClients.Count != 0)
-            {
-                disconnectedClients[0].Close();
-                disconnectedClients.RemoveAt(0);
-            } 
+            // Check contents.
+            if (pong.contents != "PONG") Console.WriteLine("player {0} did not answer to ping request, disconnecting", client.Name);
+            else                         disconnected.Remove(client);
         }
        
         public void Add(Client client)
@@ -98,7 +98,7 @@ namespace TBOServer
         {
             var timer       = new Timer();
             timer.Elapsed   += Timer_Elapsed;
-            timer.Interval  = 5000;
+            timer.Interval  = 250;
             timer.Enabled   = true;
             timer.AutoReset = true;
 

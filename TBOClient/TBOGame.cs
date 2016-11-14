@@ -51,7 +51,55 @@ namespace TBOClient
         {
             infoLog.AddEntry(EntryType.Message, "connected!");
 
-            gameState = GameState.Lobby;
+            gameState       = GameState.Lobby;
+            client.Received += Client_Received;
+
+            client.BeginListen();
+        }
+        private void Client_Received(Client client, IPacket packet)
+        {
+            switch (packet.Type)
+            {
+                case PacketType.Unknown:
+                    break;
+                case PacketType.Ping:
+                    var pong = (PingPacket)packet;
+
+                    pong.contents = "PONG";
+
+                    client.Send(pong);
+                    break;
+                case PacketType.ClientJoined:
+                    break;
+                case PacketType.ClientJoinedLobby:
+                    break;
+                case PacketType.GameData:
+                    break;
+                case PacketType.PlayerData:
+                    break;
+                case PacketType.Input:
+                    break;
+                case PacketType.MapData:
+                    break;
+                case PacketType.GameStateSync:
+                    break;
+                case PacketType.RoundStatus:
+                    break;
+                case PacketType.GameStatus:
+                    break;
+                case PacketType.Authentication:
+                    var authentication = (AuthenticationPacket)packet;
+
+                    authentication.response = string.Format("NAME:{0}", Configuration.Name);
+
+                    client.Send(authentication);
+                    break;
+                case PacketType.ServerStatus:
+                    serverState = (ServerStatusPacket)packet;
+                    break;
+                default:
+                    break;
+            }
         }
         #endregion
 
@@ -70,62 +118,6 @@ namespace TBOClient
             infoLog.AddEntry(EntryType.Message, string.Format("connecting to {0}:{1}", address, port));
 
             client.Connect(address, port);
-        }
-
-        private void ProcessIncomingPackets()
-        {
-            if (client.HasIncomingPackets())
-            {
-                var packets = client.Receive();
-
-                for (var i = 0; i < packets.Length; i++)
-                {
-                    var packet = packets[i];
-
-                    switch (packet.Type)
-                    {
-                        case PacketType.Unknown:
-                            break;
-                        case PacketType.Ping:
-                            var pong = (PingPacket)packet;
-
-                            pong.contents = "PONG";
-
-                            client.Send(pong);
-                            break;
-                        case PacketType.ClientJoined:
-                            break;
-                        case PacketType.ClientJoinedLobby:
-                            break;
-                        case PacketType.GameData:
-                            break;
-                        case PacketType.PlayerData:
-                            break;
-                        case PacketType.Input:
-                            break;
-                        case PacketType.MapData:
-                            break;
-                        case PacketType.GameStateSync:
-                            break;
-                        case PacketType.RoundStatus:
-                            break;
-                        case PacketType.GameStatus:
-                            break;
-                        case PacketType.Authentication:
-                            var authentication = (AuthenticationPacket)packet;
-
-                            authentication.response = string.Format("NAME:{0}", Configuration.Name);
-
-                            client.Send(authentication);
-                            break;
-                        case PacketType.ServerStatus:
-                            serverState = (ServerStatusPacket)packet;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
         }
 
         protected override void Initialize()
@@ -153,8 +145,6 @@ namespace TBOClient
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
-
-            ProcessIncomingPackets();
 
             base.Update(gameTime);
         }

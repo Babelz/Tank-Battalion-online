@@ -22,6 +22,8 @@ namespace TBOLib
         #endregion
 
         #region Events
+        public event ClientReceiveEventHandler Received;
+
         public event ClientEventHandler Connected;
         #endregion
 
@@ -66,6 +68,43 @@ namespace TBOLib
             if (buffer.Length < requiredLength) Array.Resize(ref buffer, requiredLength);
         }
 
+        private void BeginReceiveCallback(IAsyncResult results)
+        {
+            var bytes = connection.Available;
+
+            ReserveBufferStorage(ref receiveBuffer, bytes);
+
+            if (connection.Client == null || !connection.Client.Connected)
+            {
+                connection.Client.EndReceive(results);
+
+                return;
+            }
+
+            connection.Client.Receive(receiveBuffer, 4, bytes, SocketFlags.None);
+
+            var packets = PacketSerializer.Deserialize(receiveBuffer);
+
+            for (var i = 0; i < packets.Length; i++) Received(this, packets[i]);
+
+            connection.Client.EndReceive(results);
+
+            InternalBeginListen();
+        }
+        private void BeginSendCallback(IAsyncResult results)
+        {
+            connection.Client.EndSend(results);
+        }
+
+        private void InternalBeginListen()
+        {
+            ReserveBufferStorage(ref receiveBuffer, 4096);
+            
+            if (connection.Client == null || !connection.Client.Connected) return;
+
+            connection.Client.BeginReceive(receiveBuffer, 0, 4, SocketFlags.None, BeginReceiveCallback , null);
+        }
+        
         public void Connect(string address, int port)
         {
             connection.BeginConnect(IPAddress.Parse(address), port, (state) =>
@@ -74,47 +113,60 @@ namespace TBOLib
             }, null);
         }
 
+        public void ListenOnce()
+        {
+            if (connection.Available != 0)
+            {
+                ReserveBufferStorage(ref receiveBuffer, connection.Available);
+
+                connection.Client.Receive(receiveBuffer, 0, connection.Available, SocketFlags.None);
+
+                var packets = PacketSerializer.Deserialize(receiveBuffer);
+
+                for (var i = 0; i < packets.Length; i++) Received(this, packets[i]);
+            }
+        }
+        public void BeginListen()
+        {
+            InternalBeginListen();
+        }
+
+        /// <summary>
+        /// Returns true if the client has some 
+        /// data in the receive buffer.
+        /// </summary>
+        public bool Available()
+        {
+            return connection.Client.Available != 0;
+        }
+
         public void Send(IPacket packet)
         {
-            ReserveBufferStorage(ref sendBuffer, Packet.GetSize(packet.Type) + Packet.HeaderSize + Packet.PacketTypeSize);
+            var bytes = Packet.GetSize(packet.Type) + Packet.HeaderSize + Packet.PacketTypeSize;
+
+            ReserveBufferStorage(ref sendBuffer, bytes);
             
             PacketSerializer.Serialize(packet, ref sendBuffer);
             
             var socket = connection.Client;
 
-            if (!socket.Connected) return;
+            if (socket == null || !socket.Connected) return;
 
-            socket.Send(sendBuffer);
+            socket.Send(sendBuffer, 0, bytes, SocketFlags.None);
         }
         public void Send(params IPacket[] packets)
         {
-            ReserveBufferStorage(ref sendBuffer, packets.Sum(p => Packet.GetSize(p.Type)) + Packet.HeaderSize + Packet.PacketTypeSize * packets.Length);
+            var bytes = packets.Sum(p => Packet.GetSize(p.Type)) + Packet.HeaderSize + Packet.PacketTypeSize * packets.Length;
+
+            ReserveBufferStorage(ref sendBuffer, bytes);
 
             PacketSerializer.Serialize(packets, ref sendBuffer);
 
             var socket = connection.Client;
 
-            if (!socket.Connected) return;
-
-            socket.Send(sendBuffer);
-        }
-
-        public IPacket[] Receive()
-        {
-            if (!HasIncomingPackets()) return null;
-
-            var socket = connection.Client;
+            if (socket == null || !socket.Connected) return;
             
-            ReserveBufferStorage(ref receiveBuffer, socket.Available);
-
-            socket.Receive(receiveBuffer);
-
-            return PacketSerializer.Deserialize(receiveBuffer);
-        }
-
-        public bool HasIncomingPackets()
-        {
-            return connection.Client.Available != 0;
+            socket.Send(sendBuffer, 0, bytes, SocketFlags.None);
         }
 
         public void Close()
@@ -123,5 +175,6 @@ namespace TBOLib
         }
 
         public delegate void ClientEventHandler(Client client);
+        public delegate void ClientReceiveEventHandler(Client client, IPacket packet);
     }
 }

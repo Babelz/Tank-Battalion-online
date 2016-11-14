@@ -81,15 +81,16 @@ namespace TBOServer
             body.Restitution    = 0.2f;
             body.BodyType       = BodyType.Dynamic;
             body.FixedRotation  = true;
-            body.UserData       = player;
+
+            return body;
         }
         private Body CreateTileBody(int x, int y)
         {
             var body = BodyFactory.CreateRectangle(world,
-                                                   ConvertUnits.ToSimUnits(width),
-                                                   ConvertUnits.ToSimUnits(height),
+                                                   ConvertUnits.ToSimUnits(Tiles.Width),
+                                                   ConvertUnits.ToSimUnits(Tiles.Height),
                                                    10.0f,
-                                                   owner);
+                                                   null);
 
             body.Position       = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
             body.IsStatic       = true;
@@ -98,12 +99,16 @@ namespace TBOServer
             body.Restitution    = 0.2f;
             body.BodyType       = BodyType.Static;
             body.FixedRotation  = true;
+
+            return body;
         }
 
         public void Initialize(MapData map, List<Client> clients)
         {
+            // Init players.
             for (var i = 0; i < clients.Count; i++) players.Add(new Player(clients[i]));
             
+            // Init map.
             var tileIndex   = 0;
             var playerIndex = 0;
 
