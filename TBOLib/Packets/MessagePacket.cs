@@ -24,5 +24,10 @@ namespace TBOLib.Packets
             }
         }
         #endregion
+
+        public MessagePacket(string contents)
+        {
+            this.contents = contents;
+        }
     }
 }

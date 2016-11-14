@@ -103,10 +103,10 @@ namespace TBOServer
             return body;
         }
 
-        public void Initialize(MapData map, List<Client> clients)
+        public void Initialize(MapData map, params Client[] clients)
         {
             // Init players.
-            for (var i = 0; i < clients.Count; i++) players.Add(new Player(clients[i]));
+            for (var i = 0; i < clients.Length; i++) players.Add(new Player(clients[i]));
             
             // Init map.
             var tileIndex   = 0;
@@ -120,8 +120,8 @@ namespace TBOServer
 
                     if (tile == Tiles.Empty) continue;
 
-                    if (tile == Tiles.Blocked)      entitites.Add(CreatePlayerBody(j * Tiles.Width, i * Tiles.Height, players[playerIndex++]));
-                    else if (tile == Tiles.Spawn)   entitites.Add(CreateTileBody(j * Tiles.Width, i * Tiles.Height));
+                    if (tile == Tiles.Blocked)      entitites.Add(CreateTileBody(j * Tiles.Width, i * Tiles.Height)); 
+                    else if (tile == Tiles.Spawn)   entitites.Add(CreatePlayerBody(j * Tiles.Width, i * Tiles.Height, players[playerIndex++]));
                 }
             }
         }

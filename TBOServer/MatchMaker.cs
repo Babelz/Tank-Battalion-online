@@ -15,7 +15,9 @@ namespace TBOServer
         #region Fields
         private readonly List<Client> clients;
 
-        private readonly List<Client> disconnected;
+        private readonly List<Client> pinged;
+
+        private readonly List<Client> responded;
         #endregion
 
         #region Properties
@@ -31,7 +33,8 @@ namespace TBOServer
         public Matchmaker()
         {
             clients         = new List<Client>();
-            disconnected    = new List<Client>();
+            pinged          = new List<Client>();
+            responded       = new List<Client>();
         }
 
         #region Event handlers
@@ -41,7 +44,7 @@ namespace TBOServer
 
             SendNewPingPackets();
 
-            CreateMatches();
+            //CreateMatches();
         }
         #endregion
 
@@ -63,14 +66,16 @@ namespace TBOServer
             // Check last ping results. If there still are clients at 
             // disconnected list, they have not responded to our ping
             // request and are disconnected. Remove them.
-            for (var i = 0; i < disconnected.Count; i++) disconnected[i].ListenOnce();
+            for (var i = 0; i < pinged.Count; i++) pinged[i].ListenOnce();
 
-            while (disconnected.Count != 0)
+            for (var i = 0; i < responded.Count; i++) pinged.Remove(responded[i]);
+
+            while (pinged.Count != 0)
             {
-                Console.WriteLine("client {0} did not respond to ping, disconnecting...", disconnected[0].Name);
+                Console.WriteLine("client {0} did not respond to ping, disconnecting...", pinged[0].Name);
 
-                disconnected[0].Close();
-                disconnected.RemoveAt(0);
+                pinged[0].Close();
+                pinged.RemoveAt(0);
             }
         }
         private void SendNewPingPackets()
@@ -85,7 +90,7 @@ namespace TBOServer
 
                 client.Send(ping, status);
 
-                disconnected.Add(client);
+                pinged.Add(client);
             }
         }
 
@@ -93,25 +98,24 @@ namespace TBOServer
         {
             // Get pong packet.
             var pong = (PingPacket)packet;
-            
+
             // Unhook event.
             client.Received -= Client_Received;
 
             // Check contents.
-            if (pong.contents != "PONG") Console.WriteLine("player {0} did not answer to ping request, disconnecting", client.Name);
-            else                         disconnected.Remove(client);
+            if (pong.contents == "PONG") responded.Add(client);
         }
        
         public void Add(Client client)
         {
-            lock (clients) clients.Add(client);
+            clients.Add(client);
         }
 
         public void Start()
         {
             var timer       = new Timer();
             timer.Elapsed   += Timer_Elapsed;
-            timer.Interval  = 250;
+            timer.Interval  = 2500;
             timer.Enabled   = true;
             timer.AutoReset = true;
 

@@ -70,29 +70,26 @@ namespace TBOLib
 
         private void BeginReceiveCallback(IAsyncResult results)
         {
+            if (!IsConnected()) return;
+
             var bytes = connection.Available;
 
             ReserveBufferStorage(ref receiveBuffer, bytes);
-
-            if (connection.Client == null || !connection.Client.Connected)
-            {
-                connection.Client.EndReceive(results);
-
-                return;
-            }
-
+            
             connection.Client.Receive(receiveBuffer, 4, bytes, SocketFlags.None);
 
             var packets = PacketSerializer.Deserialize(receiveBuffer);
 
             for (var i = 0; i < packets.Length; i++) Received(this, packets[i]);
-
+            
             connection.Client.EndReceive(results);
 
             InternalBeginListen();
         }
         private void BeginSendCallback(IAsyncResult results)
         {
+            if (!IsConnected()) return;
+
             connection.Client.EndSend(results);
         }
 
@@ -101,6 +98,8 @@ namespace TBOLib
             ReserveBufferStorage(ref receiveBuffer, 4096);
             
             if (connection.Client == null || !connection.Client.Connected) return;
+
+            if (!IsConnected()) return;
 
             connection.Client.BeginReceive(receiveBuffer, 0, 4, SocketFlags.None, BeginReceiveCallback , null);
         }
@@ -115,7 +114,9 @@ namespace TBOLib
 
         public void ListenOnce()
         {
-            if (connection.Available != 0)
+            if (!IsConnected()) return;
+
+            if (Available())
             {
                 ReserveBufferStorage(ref receiveBuffer, connection.Available);
 
@@ -142,6 +143,8 @@ namespace TBOLib
 
         public void Send(IPacket packet)
         {
+            if (!IsConnected()) return;
+            
             var bytes = Packet.GetSize(packet.Type) + Packet.HeaderSize + Packet.PacketTypeSize;
 
             ReserveBufferStorage(ref sendBuffer, bytes);
@@ -156,6 +159,8 @@ namespace TBOLib
         }
         public void Send(params IPacket[] packets)
         {
+            if (!IsConnected()) return;
+
             var bytes = packets.Sum(p => Packet.GetSize(p.Type)) + Packet.HeaderSize + Packet.PacketTypeSize * packets.Length;
 
             ReserveBufferStorage(ref sendBuffer, bytes);
@@ -167,6 +172,11 @@ namespace TBOLib
             if (socket == null || !socket.Connected) return;
             
             socket.Send(sendBuffer, 0, bytes, SocketFlags.None);
+        }
+
+        public bool IsConnected()
+        {
+            return connection.Client != null && (connection.Client.Connected || connection.Client.Available == 0);
         }
 
         public void Close()
