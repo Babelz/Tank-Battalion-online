@@ -109,7 +109,12 @@ namespace TBOServer
             var data = new MapDataPacket(map.width, map.height, map.tiles);
 
             // Init players.
-            for (var i = 0; i < clients.Length; i++) players.Add(new Player(clients[i]));
+            foreach (var client in clients)
+            {
+                players.Add(new Player(client));
+
+                client.Send(data);
+            }
             
             // Init map.
             var tileIndex   = 0;

@@ -98,6 +98,7 @@ namespace TBOLib.Packets
 
         static Packet()
         {
+            // TODO: check indices.
             types = new Type[]
             {
                 null,
@@ -106,6 +107,7 @@ namespace TBOLib.Packets
                 null, // typeof(ClientJoinedLobbyPacket),
                 null, // typeof(PlayerDataPacket),
                 null, // typeof(InputPacket),
+                null,
                 typeof(MapDataPacket), 
                 null, // typeof(GameStateSyncPacket),
                 null, // typeof(RoundStatusPacket),
@@ -124,6 +126,7 @@ namespace TBOLib.Packets
                 0, // Marshal.SizeOf(typeof(ClientJoinedLobbyPacket)),
                 0, // Marshal.SizeOf(typeof(PlayerDataPacket)),
                 0, // Marshal.SizeOf(typeof(InputPacket)),
+                0,
                 Marshal.SizeOf(typeof(MapDataPacket)), 
                 0, // Marshal.SizeOf(typeof(GameStateSyncPacket)),
                 0, // Marshal.SizeOf(typeof(RoundStatusPacket)),

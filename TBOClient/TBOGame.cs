@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using TBOLib;
 using TBOLib.Packets;
 using System;
+using System.Collections.Generic;
 
 namespace TBOClient
 {
@@ -13,6 +14,15 @@ namespace TBOClient
     /// </summary>
     public class TBOGame : Game
     {
+        #region Player class
+        private sealed class Player
+        {
+            public Vector2 pos;
+            public int vOrientation;
+            public int hOrientation;
+        }
+        #endregion
+
         #region Game state enum
         private enum GameState
         {
@@ -38,6 +48,18 @@ namespace TBOClient
         private int waitElapsed;
 
         private GameState gameState;
+
+        private const int SpriteWidth  = 32;
+        private const int SpriteHeight = 32;
+
+        private Texture2D sprites;
+        private Rectangle wallSrc;
+        private Rectangle playerSrc;
+        private Rectangle projectileSrc;
+
+        private MapDataPacket map;
+
+        private List<Player> players;
         #endregion
 
         public TBOGame()
@@ -85,6 +107,7 @@ namespace TBOClient
                 case PacketType.Input:
                     break;
                 case PacketType.MapData:
+                    map = (MapDataPacket)packet;
                     break;
                 case PacketType.GameStateSync:
                     break;
@@ -109,7 +132,7 @@ namespace TBOClient
                     {
                         gameState           = GameState.WaitingForGameplay;
                         waitDisplayStrings  = message.contents.Split('\n');
-                        waitElapsed         = 10000;
+                        waitElapsed         = 3000;
                     }
                     break;
                 default:
@@ -148,10 +171,15 @@ namespace TBOClient
 
             InitializeClient();
             Connect();
+            
+            wallSrc       = new Rectangle(0, 0, SpriteWidth, SpriteHeight);
+            playerSrc     = new Rectangle(SpriteWidth, 0, SpriteWidth, SpriteHeight);
+            projectileSrc = new Rectangle(SpriteWidth * 2, 0, SpriteWidth, SpriteHeight);
         }
 
         protected override void LoadContent()
         {
+            sprites = Content.Load<Texture2D>("sprites");
         }
         protected override void UnloadContent()
         {
@@ -236,6 +264,22 @@ namespace TBOClient
                     spriteBatch.DrawString(font, first, firstPos, Color.White);
                     spriteBatch.DrawString(font, second, secondPos, Color.White);
                     spriteBatch.DrawString(font, third, thirdPos, Color.White);
+                }
+            }
+            else if (gameState == GameState.Gameplay)
+            {
+                var tileIndex = 0;
+
+                const int WallType = 1;
+
+                for (var i = 0; i < map.height; i++)
+                {
+                    for (var j = 0; j < map.width; j++)
+                    {
+                        var tileType = map.tiles[tileIndex++];
+
+                        if (tileType == WallType) spriteBatch.Draw(sprites, new Rectangle(j * SpriteWidth, i * SpriteHeight, SpriteWidth, SpriteHeight), wallSrc, Color.White);
+                    }
                 }
             }
 
