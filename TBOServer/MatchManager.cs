@@ -23,8 +23,8 @@ namespace TBOServer
         {
             Match match = new Match();
 
-            var apacket = new MessagePacket("found an opponen! match starting in {s}\nplaying agains " + b.Name);
-            var bpacket = new MessagePacket("found an opponen! match starting in {s}\nplaying agains " + a.Name);
+            var apacket = new MessagePacket("found an opponent!\nmatch starting in {s}\nplaying against " + b.Name);
+            var bpacket = new MessagePacket("found an opponent!\nmatch starting in {s}\nplaying against " + a.Name);
 
             a.Send(apacket);
             b.Send(bpacket);

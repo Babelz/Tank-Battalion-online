@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TBOLib;
+using TBOLib.Packets;
 
 namespace TBOServer
 {
@@ -105,6 +106,8 @@ namespace TBOServer
 
         public void Initialize(MapData map, params Client[] clients)
         {
+            var data = new MapDataPacket(map.width, map.height, map.tiles);
+
             // Init players.
             for (var i = 0; i < clients.Length; i++) players.Add(new Player(clients[i]));
             

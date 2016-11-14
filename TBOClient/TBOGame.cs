@@ -18,6 +18,7 @@ namespace TBOClient
         {
             Connecting,
             Lobby,
+            WaitingForGameplay,
             Gameplay
         }
         #endregion
@@ -32,6 +33,10 @@ namespace TBOClient
         private Client client;
 
         private ServerStatusPacket? serverState;
+        
+        private string[] waitDisplayStrings;
+        private int waitElapsed;
+
         private GameState gameState;
         #endregion
 
@@ -96,6 +101,16 @@ namespace TBOClient
                     break;
                 case PacketType.ServerStatus:
                     serverState = (ServerStatusPacket)packet;
+                    break;
+                case PacketType.Message:
+                    var message = (MessagePacket)packet;
+
+                    if (message.contents.StartsWith("found an opponent"))
+                    {
+                        gameState           = GameState.WaitingForGameplay;
+                        waitDisplayStrings  = message.contents.Split('\n');
+                        waitElapsed         = 10000;
+                    }
                     break;
                 default:
                     break;
@@ -182,6 +197,46 @@ namespace TBOClient
                 spriteBatch.DrawString(font, online, onlinePos, Color.White);
                 spriteBatch.DrawString(font, lobby, lobbyPos, Color.White);
                 spriteBatch.DrawString(font, playing, playingPos, Color.White);
+            }
+            else if (gameState == GameState.WaitingForGameplay)
+            {
+                waitElapsed -= gameTime.ElapsedGameTime.Milliseconds;
+
+                if (waitElapsed <= 0)
+                {
+                    gameState = GameState.Gameplay;
+                }
+                else
+                {
+                    var font = Content.Load<SpriteFont>("info log");
+                    
+                    var first = waitDisplayStrings[0];
+                    var second = waitDisplayStrings[1].Replace("{s}", ((int)Math.Round(waitElapsed / 1000.0f, 0)).ToString());
+                    var third = waitDisplayStrings[2];
+
+                    var center = new Vector2(graphics.PreferredBackBufferWidth / 2.0f, graphics.PreferredBackBufferHeight / 2.0f);
+
+                    const float Offset = 32.0f;
+
+                    var firstSize = font.MeasureString(first);
+                    var secondSize = font.MeasureString(second);
+                    var thirdSize = font.MeasureString(third);
+
+                    var firstPos = center;
+                    firstPos.X -= firstSize.X / 2.0f;
+                    firstPos.Y -= firstSize.Y + Offset;
+
+                    var secondPos = center;
+                    secondPos.X -= secondSize.X / 2.0f;
+
+                    var thirdPos = center;
+                    thirdPos.X -= firstSize.X / 2.0f;
+                    thirdPos.Y += thirdSize.Y + Offset;
+
+                    spriteBatch.DrawString(font, first, firstPos, Color.White);
+                    spriteBatch.DrawString(font, second, secondPos, Color.White);
+                    spriteBatch.DrawString(font, third, thirdPos, Color.White);
+                }
             }
 
             spriteBatch.End();

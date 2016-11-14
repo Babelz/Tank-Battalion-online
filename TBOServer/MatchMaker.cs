@@ -42,9 +42,9 @@ namespace TBOServer
         {
             CheckLastPingResults();
 
-            SendNewPingPackets();
+            CreateMatches();
 
-            //CreateMatches();
+            SendNewPingPackets();
         }
         #endregion
 
@@ -60,7 +60,7 @@ namespace TBOServer
 
             MatchManager.StartMatch(a, b);
         }
-
+        
         private void CheckLastPingResults()
         {
             // Check last ping results. If there still are clients at 
@@ -68,7 +68,11 @@ namespace TBOServer
             // request and are disconnected. Remove them.
             for (var i = 0; i < pinged.Count; i++) pinged[i].ListenOnce();
 
-            for (var i = 0; i < responded.Count; i++) pinged.Remove(responded[i]);
+            for (var i = 0; i < responded.Count; i++)
+            {
+                pinged.Remove(responded[i]);
+                clients.Add(responded[i]);
+            }
 
             while (pinged.Count != 0)
             {
@@ -77,6 +81,8 @@ namespace TBOServer
                 pinged[0].Close();
                 pinged.RemoveAt(0);
             }
+
+            responded.Clear();
         }
         private void SendNewPingPackets()
         {
@@ -92,6 +98,8 @@ namespace TBOServer
 
                 pinged.Add(client);
             }
+
+            clients.Clear();
         }
 
         private void Client_Received(Client client, IPacket packet)
