@@ -73,7 +73,12 @@ namespace TBOLib.Packets
         /// <summary>
         /// Packet that contains information about the server.
         /// </summary>
-        ServerStatus
+        ServerStatus,
+
+        /// <summary>
+        /// Generic message packet.
+        /// </summary>
+        Message
     }
 
     public static class Packet
@@ -107,7 +112,8 @@ namespace TBOLib.Packets
                 null, // typeof(GameStatusPacket),
                 null,
                 typeof(AuthenticationPacket),
-                typeof(ServerStatusPacket)
+                typeof(ServerStatusPacket),
+                typeof(MessagePacket)
             };
 
             sizes = new int[]
@@ -124,7 +130,8 @@ namespace TBOLib.Packets
                 0, // Marshal.SizeOf(typeof(GameStatusPacket)),
                 0,
                 Marshal.SizeOf(typeof(AuthenticationPacket)),
-                Marshal.SizeOf(typeof(ServerStatusPacket))
+                Marshal.SizeOf(typeof(ServerStatusPacket)),
+                Marshal.SizeOf(typeof(MessagePacket))
             };
 
             maxSize = sizes.Max();

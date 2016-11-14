@@ -37,17 +37,28 @@ namespace TBOServer
         #region Event handlers
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            ValidateAndPing();
-            
+            CheckLastPingResults();
+
+            SendNewPingPackets();
+
             CreateMatches();
         }
         #endregion
 
         private void CreateMatches()
         {
+            if (clients.Count < 2) return;
+
+            var a = clients[0];
+            var b = clients[1];
+
+            clients.Remove(a);
+            clients.Remove(b);
+
+            MatchManager.StartMatch(a, b);
         }
 
-        private void ValidateAndPing()
+        private void CheckLastPingResults()
         {
             // Check last ping results. If there still are clients at 
             // disconnected list, they have not responded to our ping
@@ -61,7 +72,9 @@ namespace TBOServer
                 disconnected[0].Close();
                 disconnected.RemoveAt(0);
             }
-
+        }
+        private void SendNewPingPackets()
+        {
             // Send new ping and status packet.
             var ping    = new PingPacket("PING");
             var status  = new ServerStatusPacket(clients.Count, 0);

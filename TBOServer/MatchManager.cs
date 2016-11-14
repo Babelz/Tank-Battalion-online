@@ -6,10 +6,15 @@ using System.Threading.Tasks;
 
 namespace TBOServer
 {
-    public sealed class MatchManager
+    public static class MatchManager
     {
         #region Fields
-
+        private static readonly List<Match> matches;
         #endregion
+
+        static MatchManager()
+        {
+            matches = new List<Match>();
+        }
     }
 }
