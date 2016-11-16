@@ -19,6 +19,8 @@ namespace TBOClient
     {
         #region Const fields
         private const int EntryDecayTime = 10 * 1000;
+        private const int MaxEntries     = 12;
+        
         private const float Offset       = 16.0f;
         #endregion
 
@@ -67,6 +69,8 @@ namespace TBOClient
 
         public void AddEntry(EntryType type, string contents)
         {
+            if (entries.Count == MaxEntries) entries.RemoveAt(0);
+
             entries.Add(new InfoLogEntry()
             {
                 contents = contents,
@@ -90,8 +94,10 @@ namespace TBOClient
 
             spriteBatch.Begin();
 
-            foreach (var entry in entries)
+            for (var i = 0; i < entries.Count; i++)
             {
+                var entry = entries[i];
+
                 spriteBatch.DrawString(font, entry.contents, position, colors[(int)entry.type]);
 
                 position.Y += font.MeasureString(entry.contents).Y + Offset;

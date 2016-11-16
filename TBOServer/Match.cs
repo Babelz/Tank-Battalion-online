@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using TBOLib;
 using TBOLib.Packets;
 
@@ -26,6 +27,8 @@ namespace TBOServer
 
             public int vOrientation;
             public int hOrientation;
+
+            public int timeFromLastPacket;
             #endregion
 
             public Player(Client client)
@@ -74,6 +77,46 @@ namespace TBOServer
             entitites = new List<Body>();
         }
 
+        #region Event handlers
+        private void Client_Received(Client client, IPacket packet)
+        {
+            switch (packet.Type)
+            {
+                case PacketType.Unknown:
+                    break;
+                case PacketType.Ping:
+                    break;
+                case PacketType.PlayerData:
+                    break;
+                case PacketType.Input:
+                    break;
+                case PacketType.MapData:
+                    break;
+                case PacketType.GameStateSync:
+                    break;
+                case PacketType.RoundStatus:
+                    break;
+                case PacketType.GameStatus:
+                    break;
+                case PacketType.Authentication:
+                    break;
+                case PacketType.ServerStatus:
+                    break;
+                case PacketType.Message:
+                    break;
+                default:
+                    break;
+            }
+        }
+        #endregion
+
+        #region Event handlers
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            BroadcastPlayerData();
+        }
+        #endregion
+
         private Body CreatePlayerBody(int x, int y, Player player)
         {
             var body = BodyFactory.CreateRectangle(world,
@@ -112,8 +155,14 @@ namespace TBOServer
         private void CreatePlayers(params Client[] clients)
         {
             // Init players.
-            foreach (var client in clients) players.Add(new Player(client));
+            foreach (var client in clients)
+            {
+                players.Add(new Player(client));
+
+                client.Received += Client_Received;
+            }
         }
+
         private void SendMapData(MapData map)
         {
             var packet = new MapDataPacket(map.width, map.height, map.tiles);
@@ -139,34 +188,43 @@ namespace TBOServer
                 }
             }
         }
-        private void SendPlayerData()
+
+        private void BroadcastPlayerData()
         {
             foreach (var player in players)
             {
-                foreach (var other in players)
-                {
-                    if (ReferenceEquals(player, other)) continue;
+                PlayerDataPacket packet;
+                packet.name         = player.client.Name;
+                packet.x            = ConvertUnits.ToDisplayUnits(player.body.Position.X);
+                packet.y            = ConvertUnits.ToDisplayUnits(player.body.Position.Y);
+                packet.vOrientation = player.vOrientation;
+                packet.hOrientation = player.hOrientation;
+                packet.health       = player.health;
+                packet.guid         = player.client.Guid.ToString();
 
-                    PlayerDataPacket packet;
-                    packet.name         = other.client.Name;
-                    packet.x            = ConvertUnits.ToDisplayUnits(other.body.Position.X);
-                    packet.y            = ConvertUnits.ToDisplayUnits(other.body.Position.Y);
-                    packet.vOrientation = other.vOrientation;
-                    packet.hOrientation = other.hOrientation;
-                    packet.health       = other.health;
-
-                    player.client.Send(packet);
-                }
+                foreach (var other in players) player.client.Send(packet);
             }
         }
         
-        public void Initialize(MapData map, params Client[] clients)
+        private void StartMatch()
+        {
+            var timer       = new Timer();
+            timer.Elapsed   += Timer_Elapsed;
+            timer.Enabled   = true;
+            timer.AutoReset = true;
+
+            timer.Start();
+        }
+
+        public void Start(MapData map, params Client[] clients)
         {
             CreatePlayers(clients);
 
             SendMapData(map);
 
             CreateMapEntitites(map);
+
+            StartMatch();
         }
     }
 }

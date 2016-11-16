@@ -50,12 +50,12 @@ namespace TBOServer
 
             listener.BeginListen();
         }
-        private static void Authenticator_AuthenticationSuccess(TcpClient client, string response, AuthenticationPacket packet)
+        private static void Authenticator_AuthenticationSuccess(TcpClient client, AuthenticationPacket packet)
         {
             Console.WriteLine("authentication ok, adding player to the matchmaker...");
-            Console.WriteLine("client responded: " + response);
+            Console.WriteLine("client responded: " + packet.response);
 
-            var name = packet.response.Substring(response.IndexOf(":") + 1).Trim();
+            var name = packet.response.Substring(packet.response.IndexOf(":") + 1).Trim();
             var guid = Guid.Parse(packet.guid);
 
             matchmaker.Add(new Client(client, name, guid));

@@ -21,6 +21,8 @@ namespace TBOLib.Packets
         public int hOrientation;
 
         public int health;
+
+        public string guid;
         #endregion
 
         #region Properties

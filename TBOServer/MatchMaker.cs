@@ -123,7 +123,7 @@ namespace TBOServer
         {
             var timer       = new Timer();
             timer.Elapsed   += Timer_Elapsed;
-            timer.Interval  = 2500;
+            timer.Interval  = 1000;
             timer.Enabled   = true;
             timer.AutoReset = true;
 

@@ -20,7 +20,7 @@ namespace TBOLib.Packets
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
         public string response;
 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
         public string guid;
         #endregion
 

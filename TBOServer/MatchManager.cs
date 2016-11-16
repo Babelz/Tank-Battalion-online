@@ -29,7 +29,7 @@ namespace TBOServer
             a.Send(apacket);
             b.Send(bpacket);
 
-            match.Initialize(Maps.Map1v1, a, b);
+            match.Start(Maps.Map1v1, a, b);
         }
     }
 }

@@ -95,6 +95,8 @@ namespace TBOClient
                     pong.contents = "PONG";
 
                     client.Send(pong);
+
+                    infoLog.AddEntry(EntryType.Message, string.Format("responding to ping at {0}", DateTime.Now.ToLongTimeString()));
                     break;
                 case PacketType.PlayerData:
                     break;
@@ -102,6 +104,8 @@ namespace TBOClient
                     break;
                 case PacketType.MapData:
                     map = (MapDataPacket)packet;
+
+                    infoLog.AddEntry(EntryType.Message, "got map data from server...");
                     break;
                 case PacketType.GameStateSync:
                     break;
@@ -114,6 +118,8 @@ namespace TBOClient
 
                     client.Guid             = Guid.Parse(authentication.guid);
                     authentication.response = string.Format("NAME:{0}", Configuration.Name);
+
+                    infoLog.AddEntry(EntryType.Message, "responding to authentication request...");
 
                     client.Send(authentication);
                     break;
@@ -129,6 +135,8 @@ namespace TBOClient
                         waitDisplayStrings  = message.contents.Split('\n');
                         waitElapsed         = 3000;
                     }
+                    
+                    infoLog.AddEntry(EntryType.Message, "joined match!");
                     break;
                 default:
                     break;
