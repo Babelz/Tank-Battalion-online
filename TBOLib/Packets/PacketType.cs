@@ -19,21 +19,6 @@ namespace TBOLib.Packets
         /// Ping packet.
         /// </summary>
         Ping,
-        
-        /// <summary>
-        /// Client has joined the server.
-        /// </summary>
-        ClientJoined,
-
-        /// <summary>
-        /// Client has joined a lobby.
-        /// </summary>
-        ClientJoinedLobby,
-        
-        /// <summary>
-        /// Packet that contains game data.
-        /// </summary>
-        GameData,
 
         /// <summary>
         /// Packet that contains player data.
@@ -98,21 +83,16 @@ namespace TBOLib.Packets
 
         static Packet()
         {
-            // TODO: check indices.
             types = new Type[]
             {
                 null,
                 typeof(PingPacket),
-                null, // typeof(ClientJoinedPacket),
-                null, // typeof(ClientJoinedLobbyPacket),
-                null, // typeof(PlayerDataPacket),
+                typeof(PlayerDataPacket),
                 null, // typeof(InputPacket),
-                null,
                 typeof(MapDataPacket), 
                 null, // typeof(GameStateSyncPacket),
                 null, // typeof(RoundStatusPacket),
                 null, // typeof(GameStatusPacket),
-                null,
                 typeof(AuthenticationPacket),
                 typeof(ServerStatusPacket),
                 typeof(MessagePacket)
@@ -122,16 +102,12 @@ namespace TBOLib.Packets
             {
                 0,
                 Marshal.SizeOf(typeof(PingPacket)),
-                0, // Marshal.SizeOf(typeof(ClientJoinedPacket)),
-                0, // Marshal.SizeOf(typeof(ClientJoinedLobbyPacket)),
-                0, // Marshal.SizeOf(typeof(PlayerDataPacket)),
+                Marshal.SizeOf(typeof(PlayerDataPacket)),
                 0, // Marshal.SizeOf(typeof(InputPacket)),
-                0,
                 Marshal.SizeOf(typeof(MapDataPacket)), 
                 0, // Marshal.SizeOf(typeof(GameStateSyncPacket)),
                 0, // Marshal.SizeOf(typeof(RoundStatusPacket)),
                 0, // Marshal.SizeOf(typeof(GameStatusPacket)),
-                0,
                 Marshal.SizeOf(typeof(AuthenticationPacket)),
                 Marshal.SizeOf(typeof(ServerStatusPacket)),
                 Marshal.SizeOf(typeof(MessagePacket))

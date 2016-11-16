@@ -23,13 +23,18 @@ namespace TBOServer
             public Body body;
 
             public int health;
+
+            public int vOrientation;
+            public int hOrientation;
             #endregion
 
             public Player(Client client)
             {
                 this.client = client;
 
-                health = 3;
+                health       = 3;
+                vOrientation = 0;
+                hOrientation = 0;
             }
         }
 
@@ -104,20 +109,21 @@ namespace TBOServer
             return body;
         }
 
-        public void Initialize(MapData map, params Client[] clients)
+        private void CreatePlayers(params Client[] clients)
         {
-            var data = new MapDataPacket(map.width, map.height, map.tiles);
-
             // Init players.
-            foreach (var client in clients)
-            {
-                players.Add(new Player(client));
+            foreach (var client in clients) players.Add(new Player(client));
+        }
+        private void SendMapData(MapData map)
+        {
+            var packet = new MapDataPacket(map.width, map.height, map.tiles);
 
-                client.Send(data);
-            }
-            
+            for (var i = 0; i < players.Count; i++) players[i].client.Send(packet);
+        }
+        private void CreateMapEntitites(MapData map)
+        {   
             // Init map.
-            var tileIndex   = 0;
+            var tileIndex = 0;
             var playerIndex = 0;
 
             for (var i = 0; i < map.height; i++)
@@ -128,10 +134,35 @@ namespace TBOServer
 
                     if (tile == Tiles.Empty) continue;
 
-                    if (tile == Tiles.Blocked)      entitites.Add(CreateTileBody(j * Tiles.Width, i * Tiles.Height)); 
+                    if (tile == Tiles.Blocked)      entitites.Add(CreateTileBody(j * Tiles.Width, i * Tiles.Height));
                     else if (tile == Tiles.Spawn)   entitites.Add(CreatePlayerBody(j * Tiles.Width, i * Tiles.Height, players[playerIndex++]));
                 }
             }
+        }
+        private void SendPlayerData()
+        {
+            foreach (var player in players)
+            {
+                foreach (var other in players)
+                {
+                    if (ReferenceEquals(player, other)) continue;
+
+                    PlayerDataPacket packet;
+                    packet.name = other.client.Name;
+                    packet.x = ConvertUnits.ToDisplayUnits(other.body.Position.X);
+                    packet.y = ConvertUnits.ToDisplayUnits(other.body.Position.Y);
+                    packet.vOrientation = other.vOrientation;
+                    packet.hOrientation = other.hOrientation;
+                    packet.r = other.Color.r;
+                    packet.g = other.Color.g;
+                    packet.b = other.Color.b;
+                    packet.a = other.Color.a;
+                }
+            }
+        }
+        
+        public void Initialize(MapData map, params Client[] clients)
+        {
         }
     }
 }

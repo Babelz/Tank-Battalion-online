@@ -96,12 +96,6 @@ namespace TBOClient
 
                     client.Send(pong);
                     break;
-                case PacketType.ClientJoined:
-                    break;
-                case PacketType.ClientJoinedLobby:
-                    break;
-                case PacketType.GameData:
-                    break;
                 case PacketType.PlayerData:
                     break;
                 case PacketType.Input:

@@ -33,7 +33,10 @@ namespace TBOLib.Packets
         {
             this.width  = width;
             this.height = height;
-            this.tiles  = tiles;
+
+            this.tiles = new byte[1024];
+
+            Array.Copy(tiles, this.tiles, tiles.Length);
         }
     }
 }
