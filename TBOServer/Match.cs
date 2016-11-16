@@ -148,21 +148,25 @@ namespace TBOServer
                     if (ReferenceEquals(player, other)) continue;
 
                     PlayerDataPacket packet;
-                    packet.name = other.client.Name;
-                    packet.x = ConvertUnits.ToDisplayUnits(other.body.Position.X);
-                    packet.y = ConvertUnits.ToDisplayUnits(other.body.Position.Y);
+                    packet.name         = other.client.Name;
+                    packet.x            = ConvertUnits.ToDisplayUnits(other.body.Position.X);
+                    packet.y            = ConvertUnits.ToDisplayUnits(other.body.Position.Y);
                     packet.vOrientation = other.vOrientation;
                     packet.hOrientation = other.hOrientation;
-                    packet.r = other.Color.r;
-                    packet.g = other.Color.g;
-                    packet.b = other.Color.b;
-                    packet.a = other.Color.a;
+                    packet.health       = other.health;
+
+                    player.client.Send(packet);
                 }
             }
         }
         
         public void Initialize(MapData map, params Client[] clients)
         {
+            CreatePlayers(clients);
+
+            SendMapData(map);
+
+            CreateMapEntitites(map);
         }
     }
 }

@@ -21,6 +21,7 @@ namespace TBOServer
             public TcpClient            client;
             public byte[]               buffer;
             public AuthenticationPacket auth;
+            public Guid                 guid;
         }
         #endregion
 
@@ -65,9 +66,10 @@ namespace TBOServer
 
             if (packet.version == auth.version &&
                 packet.time == auth.time &&
-                !string.IsNullOrEmpty(packet.response))
+                !string.IsNullOrEmpty(packet.response) &&
+                Guid.Parse(packet.guid) == state.guid)
             {
-                AuthenticationSuccess?.Invoke(state.client, packet.response);
+                AuthenticationSuccess?.Invoke(state.client, packet);
             }
             else
             {
@@ -77,7 +79,8 @@ namespace TBOServer
 
         public void Authenticate(TcpClient client)
         {
-            var packet = new AuthenticationPacket(Configuration.Version, DateTime.Now.ToString());
+            var guid   = Guid.NewGuid();
+            var packet = new AuthenticationPacket(Configuration.Version, DateTime.Now.ToString(), guid.ToString());
 
             var buffer = PacketSerializer.Serialize(packet);
 
@@ -90,11 +93,12 @@ namespace TBOServer
                                     {
                                         client  = client,
                                         buffer  = new byte[4096],
-                                        auth    = packet
+                                        auth    = packet,
+                                        guid    = guid
                                     });
         }
 
         public delegate void AuthenticationFailedEventHandler(TcpClient client);
-        public delegate void AuthenticationSuccessEventHandler(TcpClient client, string response);
+        public delegate void AuthenticationSuccessEventHandler(TcpClient client, AuthenticationPacket packet);
     }
 }

@@ -19,6 +19,9 @@ namespace TBOLib.Packets
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
         public string response;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string guid;
         #endregion
 
         #region Properties
@@ -31,10 +34,11 @@ namespace TBOLib.Packets
         }
         #endregion
 
-        public AuthenticationPacket(string version, string time)
+        public AuthenticationPacket(string version, string time, string guid)
         {
             this.version = version;
             this.time    = time;
+            this.guid    = guid;
 
             response     = string.Empty;
         }

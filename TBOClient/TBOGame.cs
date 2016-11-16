@@ -112,6 +112,7 @@ namespace TBOClient
                 case PacketType.Authentication:
                     var authentication = (AuthenticationPacket)packet;
 
+                    client.Guid             = Guid.Parse(authentication.guid);
                     authentication.response = string.Format("NAME:{0}", Configuration.Name);
 
                     client.Send(authentication);

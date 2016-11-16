@@ -19,6 +19,8 @@ namespace TBOLib
         private TcpClient connection;
 
         private string name;
+
+        private Guid? guid;
         #endregion
 
         #region Events
@@ -42,18 +44,30 @@ namespace TBOLib
                 return connection.Client.RemoteEndPoint as IPEndPoint;
             }
         }
+        public Guid? Guid
+        {
+            get
+            {
+                return guid;
+            }
+            set
+            {
+                guid = value;
+            }
+        }
         #endregion
 
         public Client(string name)
-            : this(new TcpClient(), name)
+            : this(new TcpClient(), name, null)
         {
         }
-        public Client(TcpClient connection, string name)
+        public Client(TcpClient connection, string name, Guid? guid)
         {
             Debug.Assert(connection != null);
 
             this.connection = connection;
             this.name       = name;
+            this.guid       = guid;
         }
 
         private void ReserveBufferStorage(ref byte[] buffer, int requiredLength)

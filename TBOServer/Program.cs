@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TBOLib;
+using TBOLib.Packets;
 
 namespace TBOServer
 {
@@ -49,14 +50,15 @@ namespace TBOServer
 
             listener.BeginListen();
         }
-        private static void Authenticator_AuthenticationSuccess(TcpClient client, string response)
+        private static void Authenticator_AuthenticationSuccess(TcpClient client, string response, AuthenticationPacket packet)
         {
             Console.WriteLine("authentication ok, adding player to the matchmaker...");
             Console.WriteLine("client responded: " + response);
 
-            var name = response.Substring(response.IndexOf(":") + 1).Trim();
+            var name = packet.response.Substring(response.IndexOf(":") + 1).Trim();
+            var guid = Guid.Parse(packet.guid);
 
-            matchmaker.Add(new Client(client, name));
+            matchmaker.Add(new Client(client, name, guid));
         }
         private static void Authenticator_AuthenticationFailed(TcpClient client)
         {
