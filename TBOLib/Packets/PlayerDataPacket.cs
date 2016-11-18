@@ -22,6 +22,7 @@ namespace TBOLib.Packets
 
         public int health;
 
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
         public string guid;
         #endregion
 
@@ -34,5 +35,26 @@ namespace TBOLib.Packets
             }
         }
         #endregion
+
+        public static bool operator !=(PlayerDataPacket lhs, PlayerDataPacket rhs)
+        {
+            return !(lhs == rhs);
+        }
+        public static bool operator ==(PlayerDataPacket lhs, PlayerDataPacket rhs)
+        {
+            var lhsGuid = Guid.Parse(lhs.guid);
+            var rhsGuid = Guid.Parse(rhs.guid);
+
+            return lhsGuid == rhsGuid;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+        public override int GetHashCode()
+        {
+            return guid.GetHashCode();
+        }
     }
 }

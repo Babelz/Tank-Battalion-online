@@ -119,11 +119,13 @@ namespace TBOServer
 
         private Body CreatePlayerBody(int x, int y, Player player)
         {
+            // Create dynamic rectangle for the player.
             var body = BodyFactory.CreateRectangle(world,
                                                    ConvertUnits.ToSimUnits(Tiles.Width),
                                                    ConvertUnits.ToSimUnits(Tiles.Height),
                                                    10.0f,
                                                    player);
+            body.Position       = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
             body.IsStatic       = false;
             body.Mass           = 80.0f;
             body.Friction       = 0.2f;
@@ -131,10 +133,14 @@ namespace TBOServer
             body.BodyType       = BodyType.Dynamic;
             body.FixedRotation  = true;
 
+            // Store body.
+            player.body         = body;
+
             return body;
         }
         private Body CreateTileBody(int x, int y)
         {
+            // Create static tiles for the walls.
             var body = BodyFactory.CreateRectangle(world,
                                                    ConvertUnits.ToSimUnits(Tiles.Width),
                                                    ConvertUnits.ToSimUnits(Tiles.Height),
@@ -191,6 +197,9 @@ namespace TBOServer
 
         private void BroadcastPlayerData()
         {
+            var packets = new IPacket[players.Count];
+            var pindex  = 0;
+
             foreach (var player in players)
             {
                 PlayerDataPacket packet;
@@ -202,8 +211,10 @@ namespace TBOServer
                 packet.health       = player.health;
                 packet.guid         = player.client.Guid.ToString();
 
-                foreach (var other in players) player.client.Send(packet);
+                packets[pindex++] = packet;
             }
+
+            for (var i = 0; i < players.Count; i++) players[i].client.Send(packets);
         }
         
         private void StartMatch()

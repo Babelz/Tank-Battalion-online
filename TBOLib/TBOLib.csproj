@@ -45,6 +45,7 @@
     <Compile Include="IniFile.cs" />
     <Compile Include="PacketSerializer.cs" />
     <Compile Include="Packets\AuthenticationPacket.cs" />
+    <Compile Include="Packets\InputPacket.cs" />
     <Compile Include="Packets\IPacket.cs" />
     <Compile Include="Packets\MapDataPacket.cs" />
     <Compile Include="Packets\MessagePacket.cs" />

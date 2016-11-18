@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using TBOLib;
 using TBOLib.Packets;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace TBOClient
@@ -14,15 +15,6 @@ namespace TBOClient
     /// </summary>
     public class TBOGame : Game
     {
-        #region Player class
-        private sealed class Player
-        {
-            public Vector2 pos;
-            public int vOrientation;
-            public int hOrientation;
-        }
-        #endregion
-
         #region Game state enum
         private enum GameState
         {
@@ -59,7 +51,7 @@ namespace TBOClient
 
         private MapDataPacket map;
 
-        private List<Player> players;
+        private List<PlayerDataPacket?> players;
         #endregion
 
         public TBOGame()
@@ -99,6 +91,13 @@ namespace TBOClient
                     infoLog.AddEntry(EntryType.Message, string.Format("responding to ping at {0}", DateTime.Now.ToLongTimeString()));
                     break;
                 case PacketType.PlayerData:
+                    var playerData = (PlayerDataPacket)packet;
+
+                    var index = players.IndexOf(playerData);
+
+                    if (index >= 0) players.Remove(playerData);
+
+                    players.Add(playerData);
                     break;
                 case PacketType.Input:
                     break;
@@ -178,6 +177,8 @@ namespace TBOClient
             wallSrc       = new Rectangle(0, 0, SpriteWidth, SpriteHeight);
             playerSrc     = new Rectangle(SpriteWidth, 0, SpriteWidth, SpriteHeight);
             projectileSrc = new Rectangle(SpriteWidth * 2, 0, SpriteWidth, SpriteHeight);
+
+            players       = new List<PlayerDataPacket?>();
         }
 
         protected override void LoadContent()
@@ -191,6 +192,25 @@ namespace TBOClient
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
+
+            var state = Keyboard.GetState();
+
+            if (state.IsKeyDown(Keys.W))
+            {
+            }
+            else if (state.IsKeyDown(Keys.A))
+            {
+            }
+            else if (state.IsKeyDown(Keys.S))
+            {
+            }
+            else if (state.IsKeyDown(Keys.D))
+            {
+            }
+
+            if (state.IsKeyDown(Keys.Space))
+            {
+            }
 
             base.Update(gameTime);
         }
@@ -271,6 +291,7 @@ namespace TBOClient
             }
             else if (gameState == GameState.Gameplay)
             {
+                // Draw map.
                 var tileIndex = 0;
 
                 const int WallType = 1;
@@ -283,6 +304,49 @@ namespace TBOClient
 
                         if (tileType == WallType) spriteBatch.Draw(sprites, new Rectangle(j * SpriteWidth, i * SpriteHeight, SpriteWidth, SpriteHeight), wallSrc, Color.White);
                     }
+                }
+
+                // Draw players.
+                for (var i = 0; i < players.Count; i++)
+                {
+                    if (players[i] == null) continue;
+
+                    var player       = players[i].Value;
+                    var pos          = new Vector2(player.x, player.y);
+                    var health       = player.health;
+                    var color        = Guid.Parse(player.guid) == client.Guid ? Color.Green : Color.Red;
+                    var name         = player.name;
+                    var vOrientation = player.vOrientation;
+                    var hOrientation = player.hOrientation;
+                    var font         = Content.Load<SpriteFont>("info log");
+                    var textOffset   = new Vector2(32.0f);
+                    var effects      = SpriteEffects.None;
+
+                    if (color == Color.Green)
+                    {
+                        // Draw our hud.
+                        var text     = string.Format("{0} - health: {1}", name, health);
+                        var textSize = font.MeasureString(text);
+
+                        spriteBatch.DrawString(font, 
+                                               text, 
+                                               new Vector2(textOffset.X, 
+                                                           graphics.PreferredBackBufferHeight - textSize.Y - textOffset.Y), 
+                                               color);
+                    }
+                    else if (color == Color.Red)
+                    {
+                        // Draw enemy hud.
+                        var text     = string.Format("{0} - health: {1}", name, health);
+                        var textSize = font.MeasureString(text);
+
+                        spriteBatch.DrawString(font, 
+                                               text, new Vector2(graphics.PreferredBackBufferWidth - textSize.X - textOffset.X, 
+                                                                 graphics.PreferredBackBufferHeight - textSize.Y - textOffset.Y),
+                                               color);
+                    }
+                    
+                    spriteBatch.Draw(sprites, pos, playerSrc, color, 0.0f, Vector2.Zero, 1.0f, effects, 0.0f);
                 }
             }
 
