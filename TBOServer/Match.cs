@@ -15,6 +15,12 @@ namespace TBOServer
 {
     public sealed class Match
     {
+        #region Constant fields
+        private const float Velocity            = 1.0f;
+        private const int ShootingCooldown      = 2500;
+        private const int VelocityIterations    = 2;
+        #endregion
+
         #region Player class 
         public sealed class Player
         {
@@ -29,6 +35,9 @@ namespace TBOServer
             public int hOrientation;
 
             public int timeFromLastPacket;
+
+            public int shootingCooldown;
+            public int velocitySimSteps;
             #endregion
 
             public Player(Client client)
@@ -80,6 +89,8 @@ namespace TBOServer
         #region Event handlers
         private void Client_Received(Client client, IPacket packet)
         {
+            var player = players.First(p => p.client == client);
+
             switch (packet.Type)
             {
                 case PacketType.Unknown:
@@ -89,6 +100,45 @@ namespace TBOServer
                 case PacketType.PlayerData:
                     break;
                 case PacketType.Input:
+                    var inputPacket = (InputPacket)packet;
+                    
+                    switch (inputPacket.command)
+                    {
+                        case InputCommand.Up:
+                            player.velocitySimSteps     = VelocityIterations;
+                            player.body.LinearVelocity  = new Vector2(0.0f, -Velocity);
+                            player.vOrientation         = -1;
+                            player.hOrientation         = 0;
+                            break;
+                        case InputCommand.Left:
+                            player.velocitySimSteps     = VelocityIterations;
+                            player.body.LinearVelocity  = new Vector2(-Velocity, 0.0f);
+                            player.hOrientation         = -1;
+                            player.vOrientation         = 0;
+                            break;
+                        case InputCommand.Down:
+                            player.velocitySimSteps     = VelocityIterations;
+                            player.body.LinearVelocity  = new Vector2(0.0f, Velocity);
+                            player.vOrientation         = 1;
+                            player.hOrientation         = 0;
+                            break;
+                        case InputCommand.Right:
+                            player.velocitySimSteps     = VelocityIterations;
+                            player.body.LinearVelocity  = new Vector2(Velocity, 0.0f);
+                            player.hOrientation         = 1;
+                            player.vOrientation         = 0;
+                            break;
+                        case InputCommand.Shoot:
+                            if (player.shootingCooldown <= 0)
+                            {
+                                player.shootingCooldown = ShootingCooldown;
+
+                                Console.WriteLine("PLAYER SHOOTING!"); 
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     break;
                 case PacketType.MapData:
                     break;
@@ -113,16 +163,20 @@ namespace TBOServer
         #region Event handlers
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
+            foreach (var player in players) if (player.client.Available()) player.client.ListenOnce();
+
             BroadcastPlayerData();
+
+            SimulatePhysics();
         }
         #endregion
-
+        
         private Body CreatePlayerBody(int x, int y, Player player)
         {
             // Create dynamic rectangle for the player.
             var body = BodyFactory.CreateRectangle(world,
-                                                   ConvertUnits.ToSimUnits(Tiles.Width),
-                                                   ConvertUnits.ToSimUnits(Tiles.Height),
+                                                   ConvertUnits.ToSimUnits(Tiles.Width - 8),    // Leave 8-pixels from size so players
+                                                   ConvertUnits.ToSimUnits(Tiles.Height - 8),   // Can move more smoothly.
                                                    10.0f,
                                                    player);
             body.Position       = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
@@ -142,8 +196,8 @@ namespace TBOServer
         {
             // Create static tiles for the walls.
             var body = BodyFactory.CreateRectangle(world,
-                                                   ConvertUnits.ToSimUnits(Tiles.Width),
-                                                   ConvertUnits.ToSimUnits(Tiles.Height),
+                                                   ConvertUnits.ToSimUnits(Tiles.Width - 4),
+                                                   ConvertUnits.ToSimUnits(Tiles.Height - 4),
                                                    10.0f,
                                                    null);
 
@@ -217,12 +271,30 @@ namespace TBOServer
             for (var i = 0; i < players.Count; i++) players[i].client.Send(packets);
         }
         
+        private void SimulatePhysics()
+        {
+            world.Step(TimeStep);
+
+            foreach (var player in players)
+            {
+                if (player.velocitySimSteps < 0)
+                {
+                    player.body.LinearVelocity = Vector2.Zero;
+
+                    continue;
+                }
+                
+                player.velocitySimSteps--;
+            }
+        }
+
         private void StartMatch()
         {
             var timer       = new Timer();
             timer.Elapsed   += Timer_Elapsed;
             timer.Enabled   = true;
             timer.AutoReset = true;
+            timer.Interval  = 16;
 
             timer.Start();
         }

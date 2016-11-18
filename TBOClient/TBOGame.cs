@@ -21,7 +21,8 @@ namespace TBOClient
             Connecting,
             Lobby,
             WaitingForGameplay,
-            Gameplay
+            Gameplay,
+            Disconnected
         }
         #endregion
 
@@ -91,15 +92,11 @@ namespace TBOClient
                     infoLog.AddEntry(EntryType.Message, string.Format("responding to ping at {0}", DateTime.Now.ToLongTimeString()));
                     break;
                 case PacketType.PlayerData:
+                    if (players.Count == 2) players.Clear();
+
                     var playerData = (PlayerDataPacket)packet;
-
-                    var index = players.IndexOf(playerData);
-
-                    if (index >= 0) players.Remove(playerData);
-
+                    
                     players.Add(playerData);
-                    break;
-                case PacketType.Input:
                     break;
                 case PacketType.MapData:
                     map = (MapDataPacket)packet;
@@ -160,6 +157,29 @@ namespace TBOClient
             client.Connect(address, port);
         }
 
+        private void ReadInput()
+        {
+            var state = Keyboard.GetState();
+
+            InputPacket? moveInputPacket    = null;
+            InputPacket? shootInputPacket   = null;
+
+            if (state.IsKeyDown(Keys.W))      moveInputPacket = new InputPacket(InputCommand.Up);
+            else if (state.IsKeyDown(Keys.A)) moveInputPacket = new InputPacket(InputCommand.Left);
+            else if (state.IsKeyDown(Keys.S)) moveInputPacket = new InputPacket(InputCommand.Down);
+            else if (state.IsKeyDown(Keys.D)) moveInputPacket = new InputPacket(InputCommand.Right);
+
+            if (state.IsKeyDown(Keys.Space)) shootInputPacket = new InputPacket(InputCommand.Shoot);
+            
+            if (!client.IsConnected())
+            {
+                gameState = GameState.Disconnected;
+            }
+
+            if (moveInputPacket != null)  client.Send(moveInputPacket);
+            if (shootInputPacket != null) client.Send(shootInputPacket);
+        }
+
         protected override void Initialize()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -193,24 +213,7 @@ namespace TBOClient
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
 
-            var state = Keyboard.GetState();
-
-            if (state.IsKeyDown(Keys.W))
-            {
-            }
-            else if (state.IsKeyDown(Keys.A))
-            {
-            }
-            else if (state.IsKeyDown(Keys.S))
-            {
-            }
-            else if (state.IsKeyDown(Keys.D))
-            {
-            }
-
-            if (state.IsKeyDown(Keys.Space))
-            {
-            }
+            if (gameState == GameState.Gameplay) ReadInput();
 
             base.Update(gameTime);
         }
@@ -261,9 +264,9 @@ namespace TBOClient
                 {
                     var font = Content.Load<SpriteFont>("info log");
                     
-                    var first = waitDisplayStrings[0];
+                    var first  = waitDisplayStrings[0];
                     var second = waitDisplayStrings[1].Replace("{s}", ((int)Math.Round(waitElapsed / 1000.0f, 0)).ToString());
-                    var third = waitDisplayStrings[2];
+                    var third  = waitDisplayStrings[2];
 
                     var center = new Vector2(graphics.PreferredBackBufferWidth / 2.0f, graphics.PreferredBackBufferHeight / 2.0f);
 
@@ -321,6 +324,17 @@ namespace TBOClient
                     var font         = Content.Load<SpriteFont>("info log");
                     var textOffset   = new Vector2(32.0f);
                     var effects      = SpriteEffects.None;
+                    var rot          = 0.0f;
+                    var orig         = Vector2.Zero;
+                    
+                    if (vOrientation == -1) effects |= SpriteEffects.FlipVertically;
+
+                    if (hOrientation == 0)       rot = 0.0f;
+                    else if (hOrientation == -1) rot = MathHelper.ToRadians(90.0f);
+                    else if (hOrientation == 1)  rot = MathHelper.ToRadians(-90.0f);
+
+                    if (hOrientation == -1) orig = new Vector2(0.0f, 32.0f);
+                    if (hOrientation == 1)  orig = new Vector2(32.0f, 0.0f);
 
                     if (color == Color.Green)
                     {
@@ -346,8 +360,18 @@ namespace TBOClient
                                                color);
                     }
                     
-                    spriteBatch.Draw(sprites, pos, playerSrc, color, 0.0f, Vector2.Zero, 1.0f, effects, 0.0f);
+                    spriteBatch.Draw(sprites, pos, playerSrc, color, rot, orig, 1.0f, effects, 0.0f);
                 }
+            }
+            else if (gameState == GameState.Disconnected)
+            {
+                var font = Content.Load<SpriteFont>("info log");
+
+                var str = "disconnected from server, server shutdown...";
+                var siz = font.MeasureString(str);
+                var pos = new Vector2(graphics.PreferredBackBufferWidth / 2.0f - )
+
+                spriteBatch.DrawString(font, str, pos, Color.Red);
             }
 
             spriteBatch.End();
