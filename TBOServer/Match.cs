@@ -1,5 +1,6 @@
 ﻿using FarseerPhysics;
 using FarseerPhysics.Dynamics;
+using FarseerPhysics.Dynamics.Contacts;
 using FarseerPhysics.Factories;
 using Microsoft.Xna.Framework;
 using System;
@@ -49,7 +50,9 @@ namespace TBOServer
                 hOrientation = 0;
             }
         }
+        #endregion
 
+        #region Projectile class
         public sealed class Projectile
         {
             #region Fields
@@ -144,7 +147,7 @@ namespace TBOServer
                     break;
                 case PacketType.MapData:
                     break;
-                case PacketType.GameStateSync:
+                case PacketType.ProjectilePacket:
                     break;
                 case PacketType.RoundStatus:
                     break;
@@ -160,7 +163,18 @@ namespace TBOServer
                     break;
             }
         }
-        
+
+        private bool Body_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        {
+            var adata = fixtureA.Body.UserData;
+            var bdata = fixtureB.Body.UserData;
+
+            //if (ProcessCollision(adata, bdata)) return true;
+            //if (ProcessCollision(bdata, adata)) return true;
+
+            return false;
+        }
+
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             foreach (var player in players)
@@ -176,9 +190,60 @@ namespace TBOServer
             SimulatePhysics();
         }
         #endregion
+
+        private bool CheckPlayerCollision(Player player, object other)
+        {
+        }
+        private bool CheckWallCollision(object adata, object bdata)
+        {
+        }
+        private bool CheckProjectileCollision(Projectile projectile, object other)
+        {
+        }
+
+        private bool ProcessCollision(object adata, object bdata)
+        {
+            if      (adata != null && adata.GetType() == typeof(Player))     return CheckPlayerCollision(adata as Player, bdata);
+            else if (adata != null && adata.GetType() == typeof(Projectile)) return CheckProjectileCollision(adata as Projectile, bdata);
+            else                                                             return CheckWallCollision(adata, bdata);
+        }
         
         private void SendProjectile(Player player)
         {
+            const float ProjectileSpawnOffset = 32.0f;
+
+            var px           = ConvertUnits.ToDisplayUnits(player.body.Position.X);
+            var py           = ConvertUnits.ToDisplayUnits(player.body.Position.Y);
+            var hOrientation = player.hOrientation;
+            var vOrientation = player.vOrientation;
+            var velocity     = new Vector2(hOrientation * 2.0f, vOrientation * 2.0f);
+
+            // Add offset x.
+            if      (hOrientation == -1)     px -= ProjectileSpawnOffset;
+            else if (hOrientation == 1)      px += ProjectileSpawnOffset;
+
+            // Add offset y.
+            if      (vOrientation == -1)    py -= ProjectileSpawnOffset;
+            else if (vOrientation == 1)     py += ProjectileSpawnOffset;
+
+            // Create dynamic rectangle for the projectile.
+            var body = BodyFactory.CreateRectangle(world,
+                                                   ConvertUnits.ToSimUnits(Tiles.Width - 8),    // Leave 8-pixels from size so players
+                                                   ConvertUnits.ToSimUnits(Tiles.Height - 8),   // Can move more smoothly.
+                                                   10.0f,
+                                                   player);
+
+            body.Position       = new Vector2(ConvertUnits.ToSimUnits(px), ConvertUnits.ToSimUnits(px));
+            body.IsStatic       = false;
+            body.Mass           = 80.0f;
+            body.Friction       = 0.2f;
+            body.Restitution    = 0.2f;
+            body.BodyType       = BodyType.Dynamic;
+            body.FixedRotation  = true;
+            body.LinearVelocity = velocity;
+            body.UserData       = new Projectile(player);
+
+            body.OnCollision    += Body_OnCollision;
         }
 
         private Body CreatePlayerBody(int x, int y, Player player)

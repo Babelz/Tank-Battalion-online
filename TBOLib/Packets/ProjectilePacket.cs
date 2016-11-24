@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace TBOLib.Packets
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct ProcjectilePacket : IPacket
+    public struct ProjectilePacket : IPacket
     {
         #region Fields
         public float x;

@@ -103,7 +103,7 @@ namespace TBOClient
 
                     infoLog.AddEntry(EntryType.Message, "got map data from server...");
                     break;
-                case PacketType.GameStateSync:
+                case PacketType.ProjectilePacket:
                     break;
                 case PacketType.RoundStatus:
                     break;
@@ -366,9 +366,9 @@ namespace TBOClient
 
                 var str = "disconnected from server, server shutdown...";
                 var siz = font.MeasureString(str);
-                var pos = new Vector2(graphics.PreferredBackBufferWidth / 2.0f - )
+                //var pos = new Vector2(graphics.PreferredBackBufferWidth / 2.0f - )
 
-                spriteBatch.DrawString(font, str, pos, Color.Red);
+                //spriteBatch.DrawString(font, str, pos, Color.Red);
             }
 
             spriteBatch.End();
