@@ -38,7 +38,7 @@ namespace TBOLib.Packets
         /// <summary>
         /// Contains the whole game state that lives inside the server.
         /// </summary>
-        GameStateSync,
+        ProjectilePacket,
 
         /// <summary>
         /// Contains data about the status of the round.
@@ -90,7 +90,7 @@ namespace TBOLib.Packets
                 typeof(PlayerDataPacket),
                 typeof(InputPacket),
                 typeof(MapDataPacket), 
-                null, // typeof(GameStateSyncPacket),
+                typeof(ProjectilePacket),
                 null, // typeof(RoundStatusPacket),
                 null, // typeof(GameStatusPacket),
                 typeof(AuthenticationPacket),
@@ -105,7 +105,7 @@ namespace TBOLib.Packets
                 Marshal.SizeOf(typeof(PlayerDataPacket)),
                 Marshal.SizeOf(typeof(InputPacket)),
                 Marshal.SizeOf(typeof(MapDataPacket)), 
-                0, // Marshal.SizeOf(typeof(GameStateSyncPacket)),
+                Marshal.SizeOf(typeof(ProjectilePacket)),
                 0, // Marshal.SizeOf(typeof(RoundStatusPacket)),
                 0, // Marshal.SizeOf(typeof(GameStatusPacket)),
                 Marshal.SizeOf(typeof(AuthenticationPacket)),

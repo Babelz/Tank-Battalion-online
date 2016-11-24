@@ -91,6 +91,8 @@ namespace TBOServer
         {
             var player = players.First(p => p.client == client);
 
+            player.timeFromLastPacket = 0;
+
             switch (packet.Type)
             {
                 case PacketType.Unknown:
@@ -133,7 +135,7 @@ namespace TBOServer
                             {
                                 player.shootingCooldown = ShootingCooldown;
 
-                                Console.WriteLine("PLAYER SHOOTING!"); 
+                                SendProjectile(player);
                             }
                             break;
                         default:
@@ -158,12 +160,16 @@ namespace TBOServer
                     break;
             }
         }
-        #endregion
-
-        #region Event handlers
+        
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            foreach (var player in players) if (player.client.Available()) player.client.ListenOnce();
+            foreach (var player in players)
+            {
+                player.timeFromLastPacket   += 16;
+                player.shootingCooldown     -= 16;
+
+                if (player.client.Available()) player.client.ListenOnce();
+            }
 
             BroadcastPlayerData();
 
@@ -171,6 +177,10 @@ namespace TBOServer
         }
         #endregion
         
+        private void SendProjectile(Player player)
+        {
+        }
+
         private Body CreatePlayerBody(int x, int y, Player player)
         {
             // Create dynamic rectangle for the player.
@@ -217,7 +227,12 @@ namespace TBOServer
             // Init players.
             foreach (var client in clients)
             {
-                players.Add(new Player(client));
+                var player = new Player(client);
+
+                player.vOrientation = 1;
+                player.hOrientation = 0;
+
+                players.Add(player);
 
                 client.Received += Client_Received;
             }

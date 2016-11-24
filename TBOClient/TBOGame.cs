@@ -171,10 +171,7 @@ namespace TBOClient
 
             if (state.IsKeyDown(Keys.Space)) shootInputPacket = new InputPacket(InputCommand.Shoot);
             
-            if (!client.IsConnected())
-            {
-                gameState = GameState.Disconnected;
-            }
+            if (!client.IsConnected()) gameState = GameState.Disconnected;
 
             if (moveInputPacket != null)  client.Send(moveInputPacket);
             if (shootInputPacket != null) client.Send(shootInputPacket);
