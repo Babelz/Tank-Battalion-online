@@ -11,8 +11,15 @@ namespace TBOLib.Packets
     public struct ProjectilePacket : IPacket
     {
         #region Fields
+        public bool destroyed;
+
+        public int pid;
+
         public float x;
         public float y;
+
+        public float velx;
+        public float vely;
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
         public string ownerGuid;

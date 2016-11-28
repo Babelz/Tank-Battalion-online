@@ -69,13 +69,15 @@ namespace TBOServer
         #region Constant fields
         public const float UnitToPixel = 32.0f;
         public const float PixelToUnit = 1.0f / UnitToPixel;
-        public const float TimeStep    = 1.0f / 30.0f;          // Fix from RPG, 60 causes shaking, 30 is just fine!
+        public const float TimeStep    = 1.0f / 60.0f;          // Fix from RPG, 60 causes shaking, 30 is just fine!
         #endregion
 
         #region Fields
         private readonly List<Player> players;
         private readonly List<Body> entitites;
-        private readonly World world;        
+        private readonly World world;
+
+        private int pidGenerator;    
         #endregion
 
         #region Properties
@@ -169,10 +171,12 @@ namespace TBOServer
             var adata = fixtureA.Body.UserData;
             var bdata = fixtureB.Body.UserData;
 
-            //if (ProcessCollision(adata, bdata)) return true;
-            //if (ProcessCollision(bdata, adata)) return true;
+            var astr = adata == null ? "WALL" : adata.ToString();
+            var bstr = bdata == null ? "WALL" : bdata.ToString();
 
-            return false;
+            Console.WriteLine("{0} <-> {1}", astr, bstr);
+
+            return true;
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -190,23 +194,6 @@ namespace TBOServer
             SimulatePhysics();
         }
         #endregion
-
-        private bool CheckPlayerCollision(Player player, object other)
-        {
-        }
-        private bool CheckWallCollision(object adata, object bdata)
-        {
-        }
-        private bool CheckProjectileCollision(Projectile projectile, object other)
-        {
-        }
-
-        private bool ProcessCollision(object adata, object bdata)
-        {
-            if      (adata != null && adata.GetType() == typeof(Player))     return CheckPlayerCollision(adata as Player, bdata);
-            else if (adata != null && adata.GetType() == typeof(Projectile)) return CheckProjectileCollision(adata as Projectile, bdata);
-            else                                                             return CheckWallCollision(adata, bdata);
-        }
         
         private void SendProjectile(Player player)
         {
@@ -233,17 +220,32 @@ namespace TBOServer
                                                    10.0f,
                                                    player);
 
-            body.Position       = new Vector2(ConvertUnits.ToSimUnits(px), ConvertUnits.ToSimUnits(px));
-            body.IsStatic       = false;
-            body.Mass           = 80.0f;
-            body.Friction       = 0.2f;
-            body.Restitution    = 0.2f;
-            body.BodyType       = BodyType.Dynamic;
-            body.FixedRotation  = true;
-            body.LinearVelocity = velocity;
-            body.UserData       = new Projectile(player);
+            body.Position            = new Vector2(ConvertUnits.ToSimUnits(px), ConvertUnits.ToSimUnits(py));
+            body.IsStatic            = false;
+            body.Mass                = 80.0f;
+            body.Friction            = 0.2f;
+            body.Restitution         = 0.2f;
+            body.BodyType            = BodyType.Dynamic;
+            body.FixedRotation       = true;
+            body.LinearVelocity      = velocity;
+            body.UserData            = new Projectile(player);
+            body.CollidesWith        = Category.Cat2 | Category.Cat1;
+            body.CollisionCategories = Category.Cat2;
+            
+            body.OnCollision           += Body_OnCollision;
+            
+            entitites.Add(body);
 
-            body.OnCollision    += Body_OnCollision;
+            var projectilePacket       = new ProjectilePacket();
+            projectilePacket.x         = px;
+            projectilePacket.y         = py;
+            projectilePacket.velx      = velocity.X;
+            projectilePacket.vely      = velocity.Y;
+            projectilePacket.destroyed = false;
+            projectilePacket.pid       = pidGenerator++;
+            projectilePacket.ownerGuid = player.client.Guid.ToString();
+            
+            for (var i = 0; i < players.Count; i++) players[i].client.Send(projectilePacket);
         }
 
         private Body CreatePlayerBody(int x, int y, Player player)
@@ -254,14 +256,16 @@ namespace TBOServer
                                                    ConvertUnits.ToSimUnits(Tiles.Height - 8),   // Can move more smoothly.
                                                    10.0f,
                                                    player);
-            body.Position       = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
-            body.IsStatic       = false;
-            body.Mass           = 80.0f;
-            body.Friction       = 0.2f;
-            body.Restitution    = 0.2f;
-            body.BodyType       = BodyType.Dynamic;
-            body.FixedRotation  = true;
-
+            body.Position               = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
+            body.IsStatic               = false;
+            body.Mass                   = 80.0f;
+            body.Friction               = 0.2f;
+            body.Restitution            = 0.2f;
+            body.BodyType               = BodyType.Dynamic;
+            body.FixedRotation          = true;
+            body.CollidesWith           = Category.Cat2 | Category.Cat1;
+            body.CollisionCategories    = Category.Cat2;
+            
             // Store body.
             player.body         = body;
 
@@ -276,13 +280,15 @@ namespace TBOServer
                                                    10.0f,
                                                    null);
 
-            body.Position       = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
-            body.IsStatic       = true;
-            body.Mass           = 500.0f;
-            body.Friction       = 0.2f;
-            body.Restitution    = 0.2f;
-            body.BodyType       = BodyType.Static;
-            body.FixedRotation  = true;
+            body.Position            = new Vector2(ConvertUnits.ToSimUnits(x), ConvertUnits.ToSimUnits(y));
+            body.IsStatic            = true;
+            body.Mass                = 500.0f;
+            body.Friction            = 0.0f;
+            body.Restitution         = 0.2f;
+            body.BodyType            = BodyType.Static;
+            body.FixedRotation       = true;
+            body.CollisionCategories = Category.Cat1;
+            body.CollidesWith        = Category.Cat2;
 
             return body;
         }

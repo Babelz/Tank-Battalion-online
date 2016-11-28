@@ -26,6 +26,20 @@ namespace TBOClient
         }
         #endregion
 
+        #region Projectile class
+        private sealed class Projectile
+        {
+            public float x;
+            public float y;
+
+            public float velx;
+            public float vely;
+
+            public int id;
+            public Color color;
+        }
+        #endregion
+
         #region Fields
         private readonly GraphicsDeviceManager graphics;
         
@@ -53,6 +67,10 @@ namespace TBOClient
         private MapDataPacket map;
 
         private List<PlayerDataPacket?> players;
+
+        private List<Projectile> projectiles;
+
+        private View view;
         #endregion
 
         public TBOGame()
@@ -104,6 +122,29 @@ namespace TBOClient
                     infoLog.AddEntry(EntryType.Message, "got map data from server...");
                     break;
                 case PacketType.ProjectilePacket:
+                    var projectilePacket = (ProjectilePacket)packet;
+
+                    if (projectilePacket.destroyed)
+                    {
+                        projectiles.Remove(projectiles.First(p => p.id == projectilePacket.pid));
+                    }
+                    else
+                    {
+                        var projectile = new Projectile();
+
+                        projectile.x    = projectilePacket.x;
+                        projectile.y    = projectilePacket.y;
+                        projectile.velx = projectilePacket.velx;
+                        projectile.vely = projectilePacket.vely;
+                        projectile.id   = projectilePacket.pid;
+
+                        var guid = Guid.Parse(projectilePacket.ownerGuid);
+
+                        if (guid == client.Guid) projectile.color = Color.Green;
+                        else                     projectile.color = Color.Red;
+
+                        projectiles.Add(projectile);
+                    }
                     break;
                 case PacketType.RoundStatus:
                     break;
@@ -196,6 +237,8 @@ namespace TBOClient
             projectileSrc = new Rectangle(SpriteWidth * 2, 0, SpriteWidth, SpriteHeight);
 
             players       = new List<PlayerDataPacket?>();
+            projectiles   = new List<Projectile>();
+            view          = new View(graphics.GraphicsDevice.Viewport);
         }
 
         protected override void LoadContent()
@@ -210,7 +253,19 @@ namespace TBOClient
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) Exit();
 
-            if (gameState == GameState.Gameplay) ReadInput();
+            if (gameState == GameState.Gameplay)
+            {
+                ReadInput();
+
+                lock (projectiles)
+                {
+                    foreach (var projectile in projectiles)
+                    {
+                        projectile.x += projectile.velx;
+                        projectile.y += projectile.vely;
+                    }
+                }
+            }
 
             base.Update(gameTime);
         }
@@ -218,12 +273,12 @@ namespace TBOClient
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
-
-            spriteBatch.Begin();
-
+            
             // Draw lobby state...
             if (gameState == GameState.Lobby && serverState != null)
             {
+                spriteBatch.Begin();
+
                 var font = Content.Load<SpriteFont>("info log");
 
                 var online = string.Format("online: {0}", serverState?.playersPlaying + serverState?.playersInLobby);
@@ -248,9 +303,13 @@ namespace TBOClient
                 spriteBatch.DrawString(font, online, onlinePos, Color.White);
                 spriteBatch.DrawString(font, lobby, lobbyPos, Color.White);
                 spriteBatch.DrawString(font, playing, playingPos, Color.White);
+
+                spriteBatch.End();
             }
             else if (gameState == GameState.WaitingForGameplay)
             {
+                spriteBatch.Begin();
+
                 waitElapsed -= gameTime.ElapsedGameTime.Milliseconds;
 
                 if (waitElapsed <= 0)
@@ -288,9 +347,20 @@ namespace TBOClient
                     spriteBatch.DrawString(font, second, secondPos, Color.White);
                     spriteBatch.DrawString(font, third, thirdPos, Color.White);
                 }
+
+                spriteBatch.End();
             }
             else if (gameState == GameState.Gameplay)
             {
+                var x = -((graphics.PreferredBackBufferWidth / 2.0f) - (map.width * 32) / 2.0f);
+                var y = -((graphics.PreferredBackBufferHeight / 2.0f) - (map.height * 32) / 2.0f);
+
+                view.Position = new Vector2(x, y);
+
+                view.ComputeTransform();
+
+                spriteBatch.Begin(transformMatrix: view.Transform);
+
                 // Draw map.
                 var tileIndex = 0;
 
@@ -306,6 +376,12 @@ namespace TBOClient
                     }
                 }
 
+                // Draw projectiles.
+                foreach (var projectile in projectiles)
+                    spriteBatch.Draw(sprites, new Vector2(projectile.x, projectile.y), null, projectileSrc, Vector2.Zero, 0.0f, Vector2.One, projectile.color, SpriteEffects.None, 0.0f);
+                
+                spriteBatch.End();
+                
                 // Draw players.
                 for (var i = 0; i < players.Count; i++)
                 {
@@ -335,6 +411,8 @@ namespace TBOClient
 
                     if (color == Color.Green)
                     {
+                        spriteBatch.Begin();
+
                         // Draw our hud.
                         var text     = string.Format("{0} - health: {1}", name, health);
                         var textSize = font.MeasureString(text);
@@ -344,9 +422,13 @@ namespace TBOClient
                                                new Vector2(textOffset.X, 
                                                            graphics.PreferredBackBufferHeight - textSize.Y - textOffset.Y), 
                                                color);
+
+                        spriteBatch.End();
                     }
                     else if (color == Color.Red)
                     {
+                        spriteBatch.Begin();
+
                         // Draw enemy hud.
                         var text     = string.Format("{0} - health: {1}", name, health);
                         var textSize = font.MeasureString(text);
@@ -355,13 +437,21 @@ namespace TBOClient
                                                text, new Vector2(graphics.PreferredBackBufferWidth - textSize.X - textOffset.X, 
                                                                  graphics.PreferredBackBufferHeight - textSize.Y - textOffset.Y),
                                                color);
+
+                        spriteBatch.End();
                     }
-                    
+
+                    spriteBatch.Begin(transformMatrix: view.Transform);
+
                     spriteBatch.Draw(sprites, pos, playerSrc, color, rot, orig, 1.0f, effects, 0.0f);
+
+                    spriteBatch.End();
                 }
             }
             else if (gameState == GameState.Disconnected)
             {
+                spriteBatch.Begin();
+
                 var font = Content.Load<SpriteFont>("info log");
 
                 var str = "disconnected from server, server shutdown...";
@@ -369,9 +459,9 @@ namespace TBOClient
                 //var pos = new Vector2(graphics.PreferredBackBufferWidth / 2.0f - )
 
                 //spriteBatch.DrawString(font, str, pos, Color.Red);
-            }
 
-            spriteBatch.End();
+                spriteBatch.End();
+            }
 
             // Draw gameplay state...
 
