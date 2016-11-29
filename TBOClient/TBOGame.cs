@@ -22,7 +22,8 @@ namespace TBOClient
             Lobby,
             WaitingForGameplay,
             Gameplay,
-            Disconnected
+            Disconnected,
+            GameEnd
         }
         #endregion
 
@@ -71,6 +72,9 @@ namespace TBOClient
         private List<Projectile> projectiles;
 
         private View view;
+
+        private int returnToLobbyTime;
+        private string gameEndDisplayStr;
         #endregion
 
         public TBOGame()
@@ -175,6 +179,13 @@ namespace TBOClient
                     
                     infoLog.AddEntry(EntryType.Message, "joined match!");
                     break;
+                case PacketType.GameEnd:
+                    var gameEnd = (GameEndPacket)packet;
+
+                    gameState           = GameState.GameEnd;
+                    returnToLobbyTime   = 7500;
+                    gameEndDisplayStr   = gameEnd.contents;
+                    break;
                 default:
                     break;
             }
@@ -196,6 +207,18 @@ namespace TBOClient
             infoLog.AddEntry(EntryType.Message, string.Format("connecting to {0}:{1}", address, port));
 
             client.Connect(address, port);
+        }
+
+        private void ResetGameState()
+        {
+            gameState = GameState.Connecting;
+            projectiles.Clear();
+            players.Clear();
+
+            client.Close();
+
+            InitializeClient();
+            Connect();
         }
 
         private void ReadInput()
@@ -265,6 +288,13 @@ namespace TBOClient
                         projectile.y += projectile.vely;
                     }
                 }
+            }
+
+            if (gameState == GameState.GameEnd)
+            {
+                returnToLobbyTime -= gameTime.ElapsedGameTime.Milliseconds;
+
+                if (returnToLobbyTime <= 0) ResetGameState();
             }
 
             base.Update(gameTime);
@@ -350,7 +380,7 @@ namespace TBOClient
 
                 spriteBatch.End();
             }
-            else if (gameState == GameState.Gameplay)
+            else if (gameState == GameState.Gameplay || gameState == GameState.GameEnd)
             {
                 var x = -((graphics.PreferredBackBufferWidth / 2.0f) - (map.width * 32) / 2.0f);
                 var y = -((graphics.PreferredBackBufferHeight / 2.0f) - (map.height * 32) / 2.0f);
@@ -446,6 +476,19 @@ namespace TBOClient
                     spriteBatch.Draw(sprites, pos, playerSrc, color, rot, orig, 1.0f, effects, 0.0f);
 
                     spriteBatch.End();
+
+                    if (gameState == GameState.GameEnd)
+                    {
+                        spriteBatch.Begin();
+
+                        var size     = font.MeasureString(gameEndDisplayStr);
+                        var center   = new Vector2(graphics.PreferredBackBufferWidth / 2.0f, graphics.PreferredBackBufferHeight / 2.0f);
+                        var position = new Vector2(center.X - size.X / 2.0f, center.Y - size.Y / 2.0f);
+
+                        spriteBatch.DrawString(font, gameEndDisplayStr, position, Color.White);
+
+                        spriteBatch.End();
+                    }
                 }
             }
             else if (gameState == GameState.Disconnected)

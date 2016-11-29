@@ -20,16 +20,6 @@ namespace TBOServer
         private readonly List<Client> responded;
         #endregion
 
-        #region Properties
-        public int PlayersSearching
-        {
-            get
-            {
-                return clients.Count;
-            }
-        }
-        #endregion
-
         public Matchmaker()
         {
             clients         = new List<Client>();

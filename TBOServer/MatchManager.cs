@@ -10,15 +10,6 @@ namespace TBOServer
 {
     public static class MatchManager
     {
-        #region Fields
-        private static readonly List<Match> matches;
-        #endregion
-
-        static MatchManager()
-        {
-            matches = new List<Match>();
-        }
-
         public static void StartMatch(Client a, Client b)
         {
             Match match = new Match();
@@ -30,6 +21,18 @@ namespace TBOServer
             b.Send(bpacket);
 
             match.Start(Maps.Map1v1, a, b);
+
+            match.Ended += Match_Ended;
+            match.Started += Match_Started;
+        }
+
+        private static void Match_Started(Match match)
+        {
+            Console.WriteLine("New match started, {0} vs {1}", match[0], match[1]);
+        }
+        private static void Match_Ended(Match match)
+        {
+            Console.WriteLine("New match ended, {0} vs {1}", match[0], match[1]);
         }
     }
 }

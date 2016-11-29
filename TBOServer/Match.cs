@@ -57,11 +57,14 @@ namespace TBOServer
         {
             #region Fields
             public readonly Player sender;
+
+            public readonly int pid;
             #endregion
 
-            public Projectile(Player sender)
+            public Projectile(Player sender, int pid)
             {
                 this.sender = sender;
+                this.pid    = pid;
             }
         }
         #endregion
@@ -77,11 +80,24 @@ namespace TBOServer
         private readonly List<Body> entitites;
         private readonly World world;
 
-        private int pidGenerator;    
+        private int pidGenerator;
+
+        private bool running;
+        #endregion
+
+        #region Events
+        public event MatchEventHandler Started;
+        public event MatchEventHandler Ended;
         #endregion
 
         #region Properties
-
+        public string this[int index]
+        {
+            get
+            {
+                return players[index].client.Name;
+            }
+        }
         #endregion
 
         public Match()
@@ -94,6 +110,8 @@ namespace TBOServer
         #region Event handlers
         private void Client_Received(Client client, IPacket packet)
         {
+            if (!running) return;
+
             var player = players.First(p => p.client == client);
 
             player.timeFromLastPacket = 0;
@@ -168,13 +186,24 @@ namespace TBOServer
 
         private bool Body_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
-            var adata = fixtureA.Body.UserData;
-            var bdata = fixtureB.Body.UserData;
+            var projectile = fixtureA.Body.UserData as Projectile;
+            var player     = fixtureB.Body.UserData as Player;
+            
+            if (projectile != null && player != null)
+            {
+                player.health -= 1;
 
-            var astr = adata == null ? "WALL" : adata.ToString();
-            var bstr = bdata == null ? "WALL" : bdata.ToString();
+                BroadcastPlayerData();
+            }
 
-            Console.WriteLine("{0} <-> {1}", astr, bstr);
+            var packet       = new ProjectilePacket();
+            packet.pid       = projectile.pid;
+            packet.destroyed = true;
+
+            for (var i = 0; i < players.Count; i++) players[i].client.Send(packet);
+
+            entitites.Remove(fixtureA.Body);
+            world.RemoveBody(fixtureA.Body); 
 
             return true;
         }
@@ -192,6 +221,8 @@ namespace TBOServer
             BroadcastPlayerData();
 
             SimulatePhysics();
+
+            if (!running) (sender as Timer).AutoReset = false; 
         }
         #endregion
         
@@ -213,10 +244,12 @@ namespace TBOServer
             if      (vOrientation == -1)    py -= ProjectileSpawnOffset;
             else if (vOrientation == 1)     py += ProjectileSpawnOffset;
 
+            var npid = pidGenerator++;
+
             // Create dynamic rectangle for the projectile.
             var body = BodyFactory.CreateRectangle(world,
-                                                   ConvertUnits.ToSimUnits(Tiles.Width - 8),    // Leave 8-pixels from size so players
-                                                   ConvertUnits.ToSimUnits(Tiles.Height - 8),   // Can move more smoothly.
+                                                   ConvertUnits.ToSimUnits(Tiles.Width - 16),    // Leave 8-pixels from size so players
+                                                   ConvertUnits.ToSimUnits(Tiles.Height - 16),   // Can move more smoothly.
                                                    10.0f,
                                                    player);
 
@@ -228,11 +261,11 @@ namespace TBOServer
             body.BodyType            = BodyType.Dynamic;
             body.FixedRotation       = true;
             body.LinearVelocity      = velocity;
-            body.UserData            = new Projectile(player);
+            body.UserData            = new Projectile(player, npid);
             body.CollidesWith        = Category.Cat2 | Category.Cat1;
             body.CollisionCategories = Category.Cat2;
             
-            body.OnCollision           += Body_OnCollision;
+            body.OnCollision         += Body_OnCollision;
             
             entitites.Add(body);
 
@@ -242,7 +275,7 @@ namespace TBOServer
             projectilePacket.velx      = velocity.X;
             projectilePacket.vely      = velocity.Y;
             projectilePacket.destroyed = false;
-            projectilePacket.pid       = pidGenerator++;
+            projectilePacket.pid       = npid;
             projectilePacket.ownerGuid = player.client.Guid.ToString();
             
             for (var i = 0; i < players.Count; i++) players[i].client.Send(projectilePacket);
@@ -355,6 +388,30 @@ namespace TBOServer
             }
 
             for (var i = 0; i < players.Count; i++) players[i].client.Send(packets);
+
+            if (!running) return;
+
+            // Check for dead players.
+            var deadPlayer = players.FirstOrDefault(p => p.health <= 0);
+            
+            if (deadPlayer != null)
+            {
+                BroadcastGameEndPacket(deadPlayer);
+
+                running = false;
+            }
+        }
+
+        private void BroadcastGameEndPacket(Player deadPlayer)
+        {
+            var contents = string.Format("Player \"{0}\" won!", players.FirstOrDefault(p => !ReferenceEquals(deadPlayer, p)).client.Name);
+
+            var packet      = new GameEndPacket();
+            packet.contents = contents;
+
+            for (var i = 0; i < players.Count; i++) players[i].client.Send(packet);
+
+            Ended?.Invoke(this);
         }
         
         private void SimulatePhysics()
@@ -383,10 +440,16 @@ namespace TBOServer
             timer.Interval  = 16;
 
             timer.Start();
+
+            Started?.Invoke(this);
         }
 
         public void Start(MapData map, params Client[] clients)
         {
+            if (running) return;
+
+            running = true;
+
             CreatePlayers(clients);
 
             SendMapData(map);
@@ -395,5 +458,7 @@ namespace TBOServer
 
             StartMatch();
         }
+
+        public delegate void MatchEventHandler(Match match);
     }
 }
